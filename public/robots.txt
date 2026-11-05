@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /app
+# Sitemap is added only when a final public domain is verified.

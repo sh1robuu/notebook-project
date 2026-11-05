@@ -1,0 +1,53 @@
+{
+  "name": "lessonboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "predev": "node scripts/pdf-assets.mjs",
+    "prebuild": "node scripts/pdf-assets.mjs",
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "tsc --noEmit && vite build && node scripts/prerender.mjs",
+    "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node --test tests/deploy/*.test.ts tests/deploy/*.test.mjs",
+    "test:browser": "playwright test -c playwright.deploy-production.config.ts",
+    "test": "npm run test:unit && npm run build && npm run test:browser && npm run test:routes",
+    "test:routes": "playwright test -c playwright.deploy-dev.config.ts",
+    "test:legacy": "node scripts/check-legacy.mjs && playwright test -c playwright.legacy.config.ts",
+    "check:build": "node scripts/check-build.mjs"
+  },
+  "dependencies": {
+    "@cantoo/pdf-lib": "2.11.1",
+    "@tiptap/core": "3.32.2",
+    "@tldraw/tlschema": "5.6.0",
+    "@tldraw/validate": "5.6.0",
+    "@xmldom/xmldom": "0.9.12",
+    "dexie": "4.4.7",
+    "docx-preview": "0.4.1",
+    "dompurify": "3.4.17",
+    "fflate": "0.8.3",
+    "katex": "0.19.1",
+    "pdfjs-dist": "6.4.299",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "svg-pathdata": "9.0.0",
+    "tldraw": "5.6.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
+    "@tldraw/utils": "5.6.0",
+    "@types/katex": "0.16.8",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "prettier": "3.9.10",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  }
+}

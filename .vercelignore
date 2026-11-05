@@ -1,0 +1,24 @@
+# Only the built dist output is public. Also keep development/recovery data out
+# of the uploaded build context; public runtime assets remain included.
+.git
+.vercel
+.env*
+.agents
+.codex
+.recovery
+.playwright-cli
+.taste-skill
+node_modules
+dist
+docs
+tests
+experiments
+tmp
+test-results
+playwright-report
+coverage
+playwright*.ts
+*.log
+*.teachboard
+*.zip
+
