@@ -12,13 +12,7 @@
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc --noEmit && vite build && node scripts/prerender.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
-    "typecheck": "tsc --noEmit",
-    "test:unit": "node --test tests/deploy/*.test.ts tests/deploy/*.test.mjs",
-    "test:browser": "playwright test -c playwright.deploy-production.config.ts",
-    "test": "npm run test:unit && npm run build && npm run test:browser && npm run test:routes",
-    "test:routes": "playwright test -c playwright.deploy-dev.config.ts",
-    "test:legacy": "node scripts/check-legacy.mjs && playwright test -c playwright.legacy.config.ts",
-    "check:build": "node scripts/check-build.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@cantoo/pdf-lib": "2.11.1",

@@ -1,38 +1,42 @@
+# Dependencies and generated builds
 node_modules/
-.s00-npm-cache/
-.playwright-cli/
-experiments/s00/dist/
-experiments/s00/test-results/
 dist/
-test-results/
-.taste-skill/inspect/
-word-ink-trace.json
-.recovery/
+coverage/
+*.tsbuildinfo
+
+# Local settings and credentials
 .env
 .env.*
 !.env.example
 .vercel/
-coverage/
+.agents/
+.codex/
+
+# Local documentation, tests, fixtures and experiments
+/docs/
+/tests/
+/test/
+/experiments/
+/.taste-skill/
+/playwright*.ts
+/playwright*.mjs
+**/__tests__/
+*.test.*
+*.spec.*
+
+# Local recovery, verification helpers and disposable output
+.recovery/
+.playwright-cli/
+.s00-npm-cache/
+test-results/
 playwright-report/
 tmp/
+/*-trace.json
 *.log
-**/node_modules/
-**/test-results/
-docs/verification/**/browser-artifacts/
-docs/verification/**/*-artifacts/
-docs/verification/**/*.trace
-docs/verification/**/word-ink-trace.json
-docs/verification/**/pdf-ink-trace.json
-docs/
-# Test and verification output
-docs/verification/
-experiments/s00/
-playwright-report/
-test-results/
-coverage/
-
-# Local and generated files
-node_modules/
-dist/
-.env
-.env.local
+__pycache__/
+*.py[cod]
+/scripts/check-build.mjs
+/scripts/check-legacy.mjs
+/scripts/deploy-cleanup.mjs
+/scripts/deploy-handoff.mjs
+/scripts/deploy-recovery.mjs
