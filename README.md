@@ -2,7 +2,7 @@
 
 Vietnamese product website and local teaching whiteboard. The verified production origin is **https://noteboardbymaikhuyen.vercel.app**. Public routes are `/`, `/updates`, `/help` and `/privacy`. The editor is loaded separately at `/app`.
 
-The current public release is a **Preview**. `/app` reports its production availability explicitly. It requires `VITE_EDITOR_RELEASE_ENABLED=true` and an active tldraw license key that covers the deployed hostname. The SDK performs the actual license validation. Development runs the existing editor without those production settings.
+The owner's public tldraw Hobby key is configured in `src/config/release.ts` for the production domain through November 8, 2027. `VITE_TLDRAW_LICENSE_KEY` can replace it. The SDK validates its signature, host and expiry and displays the required attribution. The router, static build, both board surfaces and document exports use the same configuration.
 
 Use Node 24.x and npm:
 

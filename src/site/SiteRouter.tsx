@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { LandingPage } from "./LandingPage.tsx";
 import { RouteNotice } from "./RouteNotice.tsx";
 import { product } from "../config/product.ts";
-import { editorReleaseState } from "../config/release.ts";
+import { editorReleaseState, getEditorLicenseKey } from "../config/release.ts";
 import { isPublicPath, pageContent } from "./content.ts";
 import { InfoPage } from "./InfoPage.tsx";
 const Editor = lazy(() => import("../app/EditorEntry.tsx"));
@@ -13,8 +13,7 @@ export function SiteRouter() {
   const app = path === "/app";
   const state = editorReleaseState({
     production: import.meta.env.PROD,
-    enabled: import.meta.env.VITE_EDITOR_RELEASE_ENABLED,
-    licenseKey: import.meta.env.VITE_TLDRAW_LICENSE_KEY,
+    licenseKey: getEditorLicenseKey(import.meta.env.VITE_TLDRAW_LICENSE_KEY),
   });
   useEffect(() => {
     document.documentElement.lang = app ? "en" : "vi";
@@ -40,7 +39,6 @@ export function SiteRouter() {
         fallback={
           <main className="route-notice" lang="vi">
             <h1>Đang mở bảng giảng…</h1>
-            <p role="status">Đang tải không gian của bạn.</p>
           </main>
         }
       >

@@ -19,16 +19,13 @@ export function RouteNotice({
       </h1>
       <p>
         {kind === "unavailable"
-          ? "Bản công khai đang chờ kích hoạt giấy phép trình biên tập. Các hình ảnh trên trang giới thiệu được chụp từ bản phát triển đang hoạt động."
+          ? "Bảng giảng tạm thời chưa sẵn sàng. Vui lòng thử lại sau."
           : kind === "not-found"
             ? "Địa chỉ này chưa có nội dung. Bạn có thể trở lại phần giới thiệu hoặc mở bảng giảng."
             : "Kiểm tra kết nối rồi tải lại trang. Dữ liệu bài giảng đã lưu trong trình duyệt được giữ nguyên."}
       </p>
       {kind === "unavailable" && (
-        <p>
-          Bài giảng đã lưu không bị thay đổi. Chuyển sang tên miền khác cần khôi
-          phục từ tệp bài giảng; dữ liệu không tự đồng bộ.
-        </p>
+        <p>Bài giảng đã lưu vẫn còn trong trình duyệt của bạn.</p>
       )}
       <div className="notice-actions">
         <a className="site-button" href="/">

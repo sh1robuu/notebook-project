@@ -162,7 +162,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
     const scope = session.scope();
     setBusy(true);
     setError("");
-    setStatus("Normalizing supported clipboard content…");
+    setStatus("Reading pasted content…");
     try {
       const { normalizeClipboard } =
         await import("../../modules/documents/clipboard.ts");
@@ -176,14 +176,14 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       setDirty(true);
       setCandidate(null);
       setStatus(
-        "Source normalized. Review diagnostics and save the draft before compiling.",
+        "Content ready. Review any notices, then save your draft.",
       );
     } catch (reason) {
       if (!task.signal.aborted)
         setError(
           reason instanceof Error
             ? reason.message
-            : "Clipboard normalization failed.",
+            : "Could not read the pasted content.",
         );
     } finally {
       if (job.current === task) {
@@ -202,14 +202,14 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
     setError("");
     setCandidate(null);
     setFileLabel(`${file.name} · ${file.size.toLocaleString()} bytes`);
-    setStatus("Checking DOCX package…");
+    setStatus("Reading DOCX…");
     try {
       const { inspectDocx } = await import("../../modules/documents/import.ts");
       const result = await inspectDocx(file, task.signal, setStatus);
       if (task.signal.aborted || scope !== session.scope()) return;
       setCandidate(result);
       setStatus(
-        "Checked DOCX. Review supported content and diagnostics; the lesson is unchanged.",
+        "DOCX ready. Review it before adding it to your draft.",
       );
     } catch (reason) {
       if (!task.signal.aborted) {
@@ -234,13 +234,13 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
     });
     setDirty(true);
     setStatus(
-      "Checked document is now the source draft. The compiled lesson is unchanged.",
+      "Document added to the draft. Your teaching page has not changed.",
     );
   }
   async function save() {
     if (sourceDirty) {
       setError(
-        "Normalize the edited source workspace before saving this semantic draft.",
+        "Select Normalize source to apply your pasted content before saving.",
       );
       return false;
     }
@@ -251,7 +251,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       await session.saveWordDraft(model, sources);
       if (scope !== session.scope()) return false;
       setDirty(false);
-      setStatus("Draft saved on this device. Compilation is separate.");
+      setStatus("Draft saved on this device. Your teaching page has not changed.");
       return true;
     } catch (reason) {
       setError(
@@ -279,7 +279,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
     const scope = session.scope();
     setBusy(true);
     setError("");
-    setStatus("Saving the source draft before compilation…");
+    setStatus("Saving your draft…");
     const editor = engine.pages.editor;
     let rollback:
       ReturnType<typeof editor.markHistoryStoppingPoint> | undefined;
@@ -311,7 +311,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
         "Before reviewed Word compilation",
       );
       setStatus(
-        "Measuring supported content and preparing native teaching blocks…",
+        "Preparing your teaching page…",
       );
       const result = await compileDocument(
         editor,
@@ -334,7 +334,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       setDirty(false);
       setCompiled(true);
       setStatus(
-        `Compiled ${model.blocks.length} source blocks. ${result.detachedAnnotations ? `${result.detachedAnnotations} annotation roots were retained at their previous positions and detached from removed blocks.` : "Annotations remain editable."}`,
+        `Compiled ${model.blocks.length} blocks. ${result.detachedAnnotations ? `${result.detachedAnnotations} notes on removed content were kept in place.` : "Notes remain editable."}`,
       );
     } catch (reason) {
       if (rollback && scope === session.scope()) {
@@ -349,7 +349,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       if (!task.signal.aborted)
         setError(
           (reason instanceof Error ? reason.message : "Compilation failed.") +
-            " Prior compiled teaching work was retained.",
+            " Your previous teaching page was kept.",
         );
     } finally {
       if (job.current === task) {
@@ -365,7 +365,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       setCompiled(false);
       setError("");
       setStatus(
-        "Source block updated. Save or compile to retain this revision.",
+        "Block updated. Save your draft or update the teaching page to keep this change.",
       );
     } catch (reason) {
       setError(String(reason));
@@ -448,9 +448,8 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
           <button onClick={close}>Close terminal</button>
         </div>
         <p>
-          Prepare an editable source draft, review its diagnostics, then compile
-          a teaching page. Source preview and teaching flow have different
-          pagination.
+          Import or paste your Word content, edit it, then add it to a teaching
+          page.
         </p>
         <div className="word-actions">
           <button
@@ -495,8 +494,8 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
         <p role="status" data-testid="word-status">
           {status ||
             (dirty || sourceDirty
-              ? "Unsaved source draft edits. The compiled lesson is unchanged."
-              : "Draft and compiled teaching content are separate revisions.")}
+              ? "You have unsaved changes. The teaching page has not changed."
+              : "Edit the draft here, then update the teaching page when you are ready.")}
         </p>
         {error ? (
           <p role="alert" className="dialog-error">
@@ -511,14 +510,14 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
           >
             <p>
               {confirm === "compile"
-                ? "Compilation uses all reviewed blocks. Existing teaching content with the same identity is updated; otherwise a new main page is added. Removed blocks keep their annotations at prior positions with detached anchors. Source headers/footers appear once per section. Undo restores the native edit and reflow together."
+                ? "Add this draft to a teaching page, or update its existing page? Notes on removed content stay in their previous positions. Page breaks may differ from Word. You can undo this change."
                 : confirm === "replace"
-                  ? "Replace this source draft with the checked document? Compiled teaching content remains unchanged."
+                  ? "Replace this draft with the imported document? Your teaching page will not change."
                   : confirm === "clear"
-                    ? "Clear this source draft? Existing compiled pages and original source assets remain recoverable."
+                    ? "Clear this draft? Existing teaching pages and original files will remain."
                     : confirm === "delete"
-                      ? "Delete this source block? Its annotations will be retained with detached anchors when you confirm recompilation."
-                      : "Discard unsaved terminal edits and close? The saved draft remains available."}
+                      ? "Delete this block? Its notes will stay in place when you update the teaching page."
+                      : "Discard unsaved changes and close? Your last saved draft will remain."}
             </p>
             <button onClick={() => setConfirm(null)}>Cancel action</button>
             <button
@@ -568,9 +567,9 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
           <div className="word-import-review">
             <h3>Checked document</h3>
             <p>
-              {candidate.document.blocks.length} source blocks ·{" "}
-              {candidate.document.diagnostics.length} diagnostics. Original DOCX
-              bytes will be retained.
+              {candidate.document.blocks.length} blocks ·{" "}
+              {candidate.document.diagnostics.length} notices. The original DOCX
+              will be kept.
             </p>
             <button
               onClick={() =>
@@ -601,10 +600,9 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
               />
             </label>
             <p>
-              Paste Word HTML when the browser exposes it. Plain text uses blank
-              lines as paragraph boundaries. RTF and unavailable
-              equations/images receive diagnostics; full DOCX is the recovery
-              route.
+              Paste from Word, or paste plain text with a blank line between
+              paragraphs. If equations or images are missing, import the DOCX
+              file instead. RTF is not supported.
             </p>
             <button
               disabled={busy || session.workspace.readOnly}

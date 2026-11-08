@@ -35,16 +35,6 @@ export function EditorAction({
   );
 }
 
-export function AvailabilityNote({ available }: { available: boolean }) {
-  return (
-    <p className="release-note">
-      {available
-        ? "Bản phát triển · Bài giảng lưu trên trình duyệt của bạn."
-        : "Bản giới thiệu · Editor công khai đang chờ kích hoạt giấy phép."}
-    </p>
-  );
-}
-
 export function SiteLayout({
   children,
   available,
@@ -115,12 +105,6 @@ export function SiteLayout({
           <a href="/help" onClick={() => setMenuOpen(false)}>
             Cách sử dụng
           </a>
-          <a href="/updates" onClick={() => setMenuOpen(false)}>
-            Cập nhật
-          </a>
-          <a href="/#cau-hoi" onClick={() => setMenuOpen(false)}>
-            Câu hỏi thường gặp
-          </a>
           <EditorAction available={available} small />
         </nav>
       </header>
@@ -132,19 +116,17 @@ export function SiteLayout({
               <img src="/mark.svg" width="28" height="28" alt="" />
               {product.name}
             </a>
-            <p>Một không gian cho mạch giảng của bạn.</p>
+            <p>Bảng viết, tài liệu và nháp cho mỗi buổi dạy.</p>
           </div>
           <nav aria-label="Liên kết cuối trang">
             <a href="/#tinh-nang">Tính năng</a>
-            <a href="/updates">Cập nhật</a>
             <a href="/help">Bắt đầu sử dụng</a>
             <a href="/privacy">Dữ liệu & quyền riêng tư</a>
-            <a href="/fonts/OFL.txt">Giấy phép phông chữ</a>
           </nav>
         </div>
         <div className="footer-bottom">
-          <p>Bản giới thiệu đang phát triển.</p>
-          <p>Lưu tại thiết bị. Sao lưu bằng tệp bài giảng.</p>
+          <p>{product.name}</p>
+          <p>Bài giảng tự động lưu trong trình duyệt.</p>
         </div>
       </footer>
     </div>

@@ -101,7 +101,7 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
           result.extension;
         a.click();
         setProgress(
-          `Download prepared (${result.bytes.length.toLocaleString()} bytes${result.extension === "pdf" ? `, ${result.rasterLayers} raster fallback layers` : ""}). Check the downloaded file before sharing.`,
+          `Download ready (${result.bytes.length.toLocaleString()} bytes). Open the file to check it before sharing.`,
         );
       } finally {
         setTimeout(() => URL.revokeObjectURL(url), 30000);
@@ -287,30 +287,25 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
           ) : null}
         </div>
         <p>
-          PNG output is opaque. Viewport, controls, selection handles and laser
-          marks are excluded. Work is captured when you prepare the export.
-          Generated files are unencrypted. Source signatures and permission
-          restrictions are not preserved. Structured Word pages include all
-          compiled blocks, including content not yet revealed in teaching mode.
-          Word blocks use raster layers; editable source stays in the lesson
-          archive. Native DOCX export is not available.
+          Exports capture the page when you select Prepare export. Controls and
+          laser marks are left out. PNGs have a solid background. Exported files
+          are not encrypted and do not retain the original file's signatures or
+          permissions. Word pages include all content, even parts not yet shown
+          while teaching. Keep a .teachboard file to edit your work later;
+          exporting to DOCX is not supported.
         </p>
         {paper.kind === "pptx" ? (
           <p>
-            PowerPoint exports use static slide backgrounds. Other slides in a
-            range include all supported builds. Annotations are included
-            according to your export settings.
+            PowerPoint slides are exported as still images. Other slides in a
+            selected range include all supported builds.
           </p>
         ) : null}
         {options.format === "pdf" ? (
           <p>
-            Original PDF text and vectors are retained on supported static
-            pages. Text, equations, images, dashed/dotted strokes and
-            unsupported SVG roots use transparent PNG layers at 2 pixels/world
-            unit (144 dpi on PDF pages; 192 dpi on blank paper). Pages with
-            supported static PDF annotation appearances use a 144 dpi raster
-            background. These layers are not searchable text. No OCR,
-            interactive forms, links or scripts are exported.
+            Original PDF text stays searchable where supported. Added text,
+            equations and some graphics are exported as images. Some annotated
+            PDF pages are also flattened to images. Forms, links and scripts
+            are not included, and scanned text is not made searchable.
           </p>
         ) : null}
         {progress ? <p role="status">{progress}</p> : null}

@@ -6,6 +6,7 @@ import { abortError, checkAbort } from "./runtime.ts";
 import { WordSourcesContext } from "../documents/render.tsx";
 import type { DocumentSources } from "../documents/sources.ts";
 import { bindWordSources } from "../documents/editor-sources.ts";
+import { getEditorLicenseKey } from "../../config/release.ts";
 /** A detached native store, never a live editor or a second authored object model. */
 export async function exportEditor(
   document: TLStoreSnapshot,
@@ -47,7 +48,9 @@ export async function exportEditor(
           shapeUtils={shapeUtils}
           textOptions={textOptions}
           options={sdkOptions}
-          licenseKey={import.meta.env.VITE_TLDRAW_LICENSE_KEY || undefined}
+          licenseKey={getEditorLicenseKey(
+            import.meta.env.VITE_TLDRAW_LICENSE_KEY,
+          )}
           onMount={(editor) => {
             clearTimeout(timer);
             signal.removeEventListener("abort", abort);

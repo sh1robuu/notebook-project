@@ -1,13 +1,7 @@
 import { useEffect } from "react";
 import { product } from "../config/product.ts";
-import { questions } from "./content.ts";
 import { Showcase } from "./Showcase.tsx";
-import {
-  SiteLayout,
-  EditorAction,
-  AvailabilityNote,
-  Arrow,
-} from "./SiteLayout.tsx";
+import { SiteLayout, EditorAction, Arrow } from "./SiteLayout.tsx";
 import { ProductImage } from "./ProductImage.tsx";
 
 export function LandingPage({ editorAvailable }: { editorAvailable: boolean }) {
@@ -38,23 +32,22 @@ export function LandingPage({ editorAvailable }: { editorAvailable: boolean }) {
         <section className="hero site-frame" aria-labelledby="hero-title">
           <div className="hero-heading">
             <h1 id="hero-title">
-              Giảng theo
+              Bảng viết
               <br />
-              mạch riêng.
+              cho bài giảng.
             </h1>
           </div>
           <div className="hero-intro">
             <p>
-              Một bảng viết để giảng bài, ghi chú tài liệu và mở thêm nháp. Giữ
-              mọi ý tưởng trong một bài giảng của bạn.
+              Viết bài, mở tài liệu và giải thích ngay trên bảng. Có thêm khung
+              nháp bên cạnh khi cần tính toán hoặc thử cách giải khác.
             </p>
             <div className="hero-actions">
               <EditorAction available={editorAvailable} />
               <a className="text-link" href="#tinh-nang">
-                Khám phá tính năng <Arrow />
+                Xem tính năng <Arrow />
               </a>
             </div>
-            <AvailabilityNote available={editorAvailable} />
           </div>
           <figure className="hero-picture" data-ui>
             <div className="product-window">
@@ -62,12 +55,12 @@ export function LandingPage({ editorAvailable }: { editorAvailable: boolean }) {
                 <span />
                 <span />
                 <span />
-                <p>{product.name} · Không gian bài giảng</p>
+                <p>{product.name} · Bảng giảng</p>
               </div>
               <ProductImage
                 name="overview"
                 hero
-                alt="Bảng Lessonboard thực tế với hình tam giác, công thức diện tích và nét viết giải thích."
+                alt="Bảng Lessonboard với hình tam giác, công thức diện tích và nét viết giải thích."
               />
             </div>
             <figcaption>
@@ -83,11 +76,11 @@ export function LandingPage({ editorAvailable }: { editorAvailable: boolean }) {
         >
           <div className="section-heading">
             <h2 id="showcase-title" data-arrive>
-              Một bài, nhiều cách giảng.
+              Các công cụ cho bài giảng.
             </h2>
             <p data-arrive>
-              Chọn một góc nhìn từ ứng dụng đang hoạt động. Mỗi công cụ có chỗ
-              trong mạch giải thích.
+              Viết tay, ghi chú tài liệu hoặc trình chiếu slide mà không cần rời
+              bảng.
             </p>
           </div>
           <Showcase />
@@ -97,17 +90,17 @@ export function LandingPage({ editorAvailable }: { editorAvailable: boolean }) {
           <div className="site-frame scratch-inner">
             <div className="scratch-copy">
               <h2 id="scratch-title" data-arrive>
-                Giữ mạch.
+                Mở thêm
                 <br />
-                Thêm nháp.
+                bảng nháp.
               </h2>
               <p data-arrive>
-                Giữ nội dung chính trong tầm nhìn, rồi thử một hướng giải khác
-                ngay bên cạnh.
+                Để bài giảng ở bảng chính, dùng nháp cho phép tính phụ hoặc một
+                cách giải khác.
               </p>
               <p className="small-copy" data-arrive>
-                Khung nháp có góc nhìn và lịch sử hoàn tác riêng. Điều chỉnh
-                phần chia hoặc dọn riêng nháp khi cần.
+                Phóng to, hoàn tác và xóa nháp riêng mà không ảnh hưởng đến bảng
+                chính.
               </p>
               <a className="text-link" href="/help#nhap" data-arrive>
                 Cách dùng khung nháp <Arrow />
@@ -119,7 +112,7 @@ export function LandingPage({ editorAvailable }: { editorAvailable: boolean }) {
                 alt="Bảng chính và nháp độc lập được mở cạnh nhau, mỗi bên có nội dung toán học và nét viết riêng."
               />
               <figcaption>
-                Hai mặt bảng, hai cách triển khai một lời giải.
+                Đổi trang bài giảng vẫn giữ nguyên phần nháp.
               </figcaption>
             </figure>
           </div>
@@ -131,29 +124,28 @@ export function LandingPage({ editorAvailable }: { editorAvailable: boolean }) {
         >
           <div className="section-heading">
             <h2 id="documents-title" data-arrive>
-              Bắt đầu từ tài liệu.
+              Dùng ngay tài liệu đã có.
             </h2>
             <p data-arrive>
-              Đưa nội dung đã có vào buổi học. Kiểm tra phần được hỗ trợ, rồi
-              viết tiếp lời giải lên trên.
+              Mở PDF, Word hoặc PowerPoint, rồi thêm ghi chú và lời giải của
+              bạn.
             </p>
           </div>
           <div className="document-row">
             <figure data-ui data-arrive>
               <ProductImage
                 name="pdf"
-                alt="Tài liệu PDF thực tế trong Lessonboard với nét viết chú thích trên trang."
+                alt="Tài liệu PDF trong Lessonboard với nét viết chú thích trên trang."
               />
             </figure>
             <div className="document-copy">
-              <h3 data-arrive>Đọc, đánh dấu, giải thích.</h3>
+              <h3 data-arrive>Viết trực tiếp trên PDF</h3>
               <p data-arrive>
-                Nhập PDF làm nền và dùng các công cụ viết quen thuộc. Tài liệu
-                gốc và phần chú thích được giữ riêng.
+                Đánh dấu đề bài, ghi chú bên lề hoặc viết lời giải lên trang.
+                Bạn có thể sửa phần viết thêm mà không đổi tài liệu gốc.
               </p>
               <p className="small-copy" data-arrive>
-                Chọn văn bản khi PDF có lớp chữ. Bản quét chưa có OCR; các thành
-                phần tương tác không được giữ trong bản xuất.
+                Chọn và sao chép chữ trong PDF có văn bản.
               </p>
               <a className="text-link" href="/help#tai-lieu" data-arrive>
                 Xem định dạng hỗ trợ <Arrow />
@@ -164,163 +156,33 @@ export function LandingPage({ editorAvailable }: { editorAvailable: boolean }) {
             <article data-arrive>
               <h3>Word & công thức</h3>
               <p>
-                Word Terminal chỉnh văn bản, bảng và công thức OMML được hỗ trợ.
-                Biên soạn thành từng khối để hé lộ khi giảng.
-              </p>
-              <p className="small-copy">
-                Bố cục Word và MathType cũ còn giới hạn.
+                Sửa văn bản, bảng và công thức trong tài liệu Word. Chia bài
+                thành từng phần để lần lượt hiện khi giảng.
               </p>
             </article>
             <article data-arrive>
               <h3>PowerPoint từng bước</h3>
               <p>
-                Nhập PPTX, giữ thứ tự slide và trình bày các build được hỗ trợ.
-                Nét viết trên slide tiếp tục chỉnh sửa được.
-              </p>
-              <p className="small-copy">
-                Bản thử nghiệm. Phông chữ, media và hiệu ứng phức tạp có cảnh
-                báo.
+                Chuyển slide, hiện nội dung từng bước và ghi chú ngay khi trình
+                chiếu. Các nét viết được lưu cùng bài giảng.
               </p>
             </article>
-          </div>
-        </section>
-
-        <section
-          className="workflow-section"
-          id="cach-dung"
-          aria-labelledby="workflow-title"
-        >
-          <div className="site-frame workflow-inner">
-            <div>
-              <h2 id="workflow-title" data-arrive>
-                Chuẩn bị một lần.
-                <br />
-                Tiếp tục buổi sau.
-              </h2>
-              <p data-arrive>
-                Editor hiện lưu ngay trong trình duyệt. Tệp bài giảng giúp bạn
-                giữ một bản riêng để mở lại.
-              </p>
-              <a className="text-link" href="/help" data-arrive>
-                Hướng dẫn bắt đầu <Arrow />
-              </a>
-            </div>
-            <ol className="workflow-list">
-              <li data-arrive>
-                <h3>Mở không gian</h3>
-                <p>
-                  Trở lại bài đã lưu trên cùng trình duyệt hoặc mở một tệp
-                  .teachboard.
-                </p>
-              </li>
-              <li data-arrive>
-                <h3>Thêm chất liệu</h3>
-                <p>
-                  Tạo trang, thêm hình và công thức hoặc xem trước tài liệu muốn
-                  nhập.
-                </p>
-              </li>
-              <li data-arrive>
-                <h3>Viết & trình bày</h3>
-                <p>
-                  Phát triển lời giải, mở nháp và chuyển giữa các trang theo
-                  nhịp giảng.
-                </p>
-              </li>
-              <li data-arrive>
-                <h3>Giữ một bản riêng</h3>
-                <p>
-                  Tải tệp bài giảng để sao lưu. Dùng PNG/PDF khi muốn chia sẻ
-                  bản trình bày.
-                </p>
-              </li>
-            </ol>
-          </div>
-        </section>
-
-        <section
-          className="status-section site-frame"
-          id="lo-trinh"
-          aria-labelledby="status-title"
-        >
-          <div className="release-status-heading">
-            <h2 id="status-title" data-arrive>
-              Đang mở từng phần.
-            </h2>
-            <p data-arrive>
-              Preview Release. Lessonboard được phát triển và phát hành từng
-              bước. Bạn có thể xem rõ những gì đã có và giới hạn của từng phần.
-            </p>
-          </div>
-          <div className="release-state" data-arrive>
-            <span className="status-indicator" aria-hidden="true" />
-            <div>
-              <h3>
-                {editorAvailable
-                  ? "Bảng giảng đang mở"
-                  : "Website đã mở. Editor đang chuẩn bị."}
-              </h3>
-              <p>
-                {editorAvailable
-                  ? "Các công cụ hiện có chạy trong trình duyệt. Một số định dạng tài liệu vẫn ở mức thử nghiệm."
-                  : "Ảnh trên website được chụp từ bản phát triển. Editor công khai cần giấy phép hợp lệ trước khi có thể mở."}
-              </p>
-              <a className="text-link" href="/updates">
-                Theo dõi cập nhật <Arrow />
-              </a>
-            </div>
-          </div>
-          <div className="storage-note" data-arrive>
-            <p>
-              Bài giảng lưu tại thiết bị, chưa đồng bộ đám mây. Đổi trình duyệt,
-              thiết bị hoặc tên miền cần khôi phục bằng tệp bài giảng.
-            </p>
-            <a className="text-link" href="/privacy">
-              Tìm hiểu về dữ liệu <Arrow />
-            </a>
-          </div>
-        </section>
-
-        <section
-          className="faq-section site-frame"
-          id="cau-hoi"
-          aria-labelledby="faq-title"
-        >
-          <div className="faq-heading">
-            <h2 id="faq-title" data-arrive>
-              Trước khi bắt đầu.
-            </h2>
-            <p data-arrive>Một vài điều về cách dùng và dữ liệu của bạn.</p>
-            <a className="text-link" href="/help">
-              Đọc hướng dẫn <Arrow />
-            </a>
-          </div>
-          <div className="faq-list">
-            {questions.map((q) => (
-              <details key={q.title}>
-                <summary>
-                  {q.title}
-                  <span aria-hidden="true">+</span>
-                </summary>
-                <p>{q.answer}</p>
-              </details>
-            ))}
           </div>
         </section>
 
         <section className="closing-section" aria-labelledby="closing-title">
           <div className="site-frame closing-inner">
             <h2 id="closing-title" data-arrive>
-              Bắt đầu từ
+              Mở bảng.
               <br />
-              một nét viết.
+              Giảng bài.
             </h2>
             <div>
               <p data-arrive>
-                Chuẩn bị chất liệu, để phần giảng giải thuộc về bạn.
+                Bài giảng tự động lưu trong trình duyệt. Tải một bản sao để mở
+                lại trên máy khác hoặc xuất PNG, PDF để gửi cho học sinh.
               </p>
               <EditorAction available={editorAvailable} />
-              <AvailabilityNote available={editorAvailable} />
             </div>
           </div>
         </section>

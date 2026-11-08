@@ -14,7 +14,6 @@ export function renderSite(path: string, editorAvailable: boolean) {
     return renderToString(
       <main className="route-notice" lang="vi">
         <h1>Đang mở bảng giảng…</h1>
-        <p role="status">Đang tải không gian của bạn.</p>
       </main>,
     );
   return renderToString(

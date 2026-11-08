@@ -3,7 +3,10 @@ import { createServer, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { readFile, writeFile } from "node:fs/promises";
 import { product } from "../src/config/product.ts";
-import { editorReleaseState } from "../src/config/release.ts";
+import {
+  editorReleaseState,
+  getEditorLicenseKey,
+} from "../src/config/release.ts";
 import { publicPaths, pageContent } from "../src/site/content.ts";
 const env = {
   ...loadEnv("production", process.cwd(), "VITE_"),
@@ -12,8 +15,7 @@ const env = {
 const available =
   editorReleaseState({
     production: true,
-    enabled: env.VITE_EDITOR_RELEASE_ENABLED,
-    licenseKey: env.VITE_TLDRAW_LICENSE_KEY,
+    licenseKey: getEditorLicenseKey(env.VITE_TLDRAW_LICENSE_KEY),
   }) === "enabled";
 const preview = env.VERCEL_ENV === "preview";
 const server = await createServer({
@@ -60,7 +62,7 @@ try {
               : "Không tìm thấy trang — " + product.name,
           description:
             path === "/app"
-              ? "Trạng thái mở bảng giảng Lessonboard."
+              ? "Viết, mở tài liệu và lưu bài giảng của bạn."
               : "Địa chỉ này chưa có nội dung.",
         };
     const robots =

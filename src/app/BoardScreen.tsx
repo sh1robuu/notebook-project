@@ -7,6 +7,7 @@ import {
 } from "react";
 import { Tldraw } from "tldraw";
 import { product } from "../config/product.ts";
+import { getEditorLicenseKey } from "../config/release.ts";
 import type { Editor } from "tldraw";
 import "tldraw/tldraw.css";
 import type { LocalWorkspace } from "../modules/workspace/local-workspace.ts";
@@ -204,7 +205,9 @@ function EditorSurface({
               options={sdkOptions}
               getShapeVisibility={wordVisibility}
               onMount={mount}
-              licenseKey={import.meta.env.VITE_TLDRAW_LICENSE_KEY || undefined}
+              licenseKey={getEditorLicenseKey(
+                import.meta.env.VITE_TLDRAW_LICENSE_KEY,
+              )}
             />
           </WordSourcesContext.Provider>
         </PdfSessionContext.Provider>

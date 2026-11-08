@@ -41,8 +41,7 @@ export function WordPreview({ document: model, sources }: Props) {
       {mode === "semantic" ? (
         <>
           <p>
-            Semantic teaching preview uses the editable document model. It
-            reflows and may paginate differently from Microsoft Word.
+            Text wraps to fit this view. Page breaks may differ from Word.
           </p>
           <div className="word-preview-blocks">
             {model.blocks.slice(0, visible).map((block, index) => (
@@ -71,7 +70,7 @@ export function WordPreview({ document: model, sources }: Props) {
           ) : null}
           <p>
             {Math.min(visible, model.blocks.length)} of {model.blocks.length}{" "}
-            root blocks shown.
+            blocks shown.
           </p>
         </>
       ) : source ? (
@@ -100,7 +99,7 @@ function SourcePreview({
     void (async () => {
       if (bytes.length > 5_000_000)
         throw new Error(
-          "Source layout preview is limited to 5 MB to keep editing responsive. Use the semantic preview or open the retained DOCX in Word for this document.",
+          "This preview supports DOCX files up to 5 MB. Use Teaching layout preview or open the file in Word.",
         );
       const { readOoxmlPackage, elements, REL } =
         await import("../../modules/documents/package.ts");
@@ -116,14 +115,14 @@ function SourcePreview({
               /(?:oleObject|aFChunk)$/i.test(rel.getAttribute("Type") ?? "")
             )
               throw new Error(
-                "Source preview is unavailable for external relationships or embedded objects. Use the semantic preview and its element diagnostics; no external resource was fetched.",
+                "This file has linked content or embedded objects that this preview cannot display. Use Teaching layout preview instead.",
               );
         if (
           /^word\/(?:embeddings|activeX)\//i.test(name) ||
           (/^word\/media\//i.test(name) && !/\.(png|jpe?g)$/i.test(name))
         )
           throw new Error(
-            "Source preview is limited to safe PNG/JPEG media without embedded objects. Original data and semantic diagnostics remain available.",
+            "This preview supports PNG and JPEG images without embedded objects. Use Teaching layout preview for other content.",
           );
       }
       if (!live) return;
@@ -207,7 +206,7 @@ function SourcePreview({
         setError(
           cause instanceof Error
             ? cause.message
-            : "Source layout preview could not load. The semantic document and original source are retained.",
+            : "Could not load this preview. Your document and original DOCX are still available.",
         );
     });
     return () => {
@@ -217,10 +216,8 @@ function SourcePreview({
   return (
     <div>
       <p>
-        Source layout approximation uses docx-preview 0.4.1 in an isolated
-        frame. It is not verified Microsoft Word pagination. Equations, floating
-        objects, legacy graphics and unavailable fonts can differ; use the
-        semantic preview and diagnostics to check supported content.
+        Page breaks, fonts, equations and positioned objects may look different
+        from Word.
       </p>
       {error ? (
         <p role="alert">{error}</p>
@@ -233,7 +230,7 @@ function SourcePreview({
           style={{ width: "100%", height: 480, border: "1px solid #ccd4d8" }}
         />
       ) : (
-        <p role="status">Preparing isolated source layout preview…</p>
+        <p role="status">Preparing document preview…</p>
       )}
     </div>
   );

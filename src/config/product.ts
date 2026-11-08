@@ -3,7 +3,7 @@ const name = "Lessonboard";
 export const product = {
   name,
   siteUrl: "https://noteboardbymaikhuyen.vercel.app",
-  title: `${name} — Bảng giảng theo mạch riêng`,
+  title: `${name} — Bảng viết cho mỗi buổi dạy`,
   description:
-    "Không gian giảng dạy số với bảng viết, tài liệu được hỗ trợ và khung nháp độc lập. Bài giảng lưu trên trình duyệt của bạn.",
+    "Viết bài, ghi chú trên PDF, mở tài liệu Word và PowerPoint. Có khung nháp riêng và tự động lưu bài trong trình duyệt.",
 } as const;

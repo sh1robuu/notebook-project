@@ -2,18 +2,13 @@ import type { ReactNode } from "react";
 import { product } from "../config/product.ts";
 import { updates } from "./content.ts";
 import type { PublicPath } from "./content.ts";
-import {
-  SiteLayout,
-  AvailabilityNote,
-  EditorAction,
-  Arrow,
-} from "./SiteLayout.tsx";
+import { SiteLayout, EditorAction, Arrow } from "./SiteLayout.tsx";
 
 const helpSections = [
   {
     id: "mo-bang",
-    title: "Mở đúng không gian",
-    text: "Chọn Mở bảng giảng khi editor đã được kích hoạt. Nếu website hiển thị trạng thái chờ giấy phép, editor công khai chưa sẵn sàng. Bài giảng của bản phát triển được lưu theo địa chỉ website và hồ sơ trình duyệt đang dùng.",
+    title: "Mở bảng giảng",
+    text: "Chọn Mở bảng giảng để bắt đầu. Bài đã lưu sẽ mở lại khi bạn dùng cùng trình duyệt và địa chỉ website.",
     items: [
       "Trở lại đúng trình duyệt và địa chỉ đã dùng để tìm bài cũ.",
       "Khi chuyển sang địa chỉ khác, tải tệp .teachboard từ địa chỉ cũ trước rồi khôi phục tại địa chỉ mới.",
@@ -36,7 +31,7 @@ const helpSections = [
     items: [
       "Thay màu, kích thước và hướng giấy cho trang trắng.",
       "Trang PDF và PowerPoint giữ kích thước nguồn. Phần chú thích có thể chỉnh sửa riêng.",
-      "Bản hiện tại giới hạn 200 trang chính và 20.000 đối tượng trên hai mặt bảng.",
+      "Mỗi bài có tối đa 200 trang chính và 20.000 đối tượng trên hai mặt bảng.",
     ],
   },
   {
@@ -51,13 +46,13 @@ const helpSections = [
   },
   {
     id: "tai-lieu",
-    title: "Kiểm tra tài liệu trước khi nhập",
-    text: "Import PDF, Import DOCX và Import PowerPoint mở luồng kiểm tra và xem trước. Đọc các cảnh báo rồi xác nhận đưa vào bài. Tài liệu nguồn được xử lý tại thiết bị và giữ trong tệp bài giảng được hỗ trợ.",
+    title: "Nhập tài liệu",
+    text: "Chọn Import PDF, Import DOCX hoặc Import PowerPoint. Xem trước tài liệu và đọc thông báo trước khi thêm vào bài. Tài liệu được xử lý trên thiết bị và lưu cùng tệp bài giảng.",
     items: [
       "PDF dùng làm nền cho chú thích. Bản quét chưa có OCR. PDF mã hóa cần mở khóa trong phiên làm việc.",
-      "DOCX/OMML dùng mô hình nội dung được hỗ trợ. Word Terminal sửa nguồn và biên soạn thành các khối để giảng. Chưa bảo toàn mọi bố cục Word hoặc chuyển MathType cũ thành công thức chỉnh sửa được.",
-      "PPTX giữ slide và một số thứ tự build theo nguồn. Các hiệu ứng được hỗ trợ có thể được đơn giản hóa thành hiện nội dung. Chart, SmartArt, video/audio và nhiều kiểu chữ hoặc hiệu ứng còn giới hạn.",
-      "Chưa hỗ trợ .doc/.ppt cũ hoặc tài liệu chứa macro. DOCX và PPTX giới hạn 50 MB mỗi tệp, cùng các giới hạn giải nén và tài nguyên.",
+      "Với DOCX, dùng Word Terminal để sửa văn bản, bảng và công thức Word (OMML), rồi chia thành từng phần để trình bày. Một số bố cục Word và công thức MathType cũ có thể hiển thị khác bản gốc hoặc không chỉnh sửa được.",
+      "Với PPTX, bạn có thể chuyển slide và hiện nội dung từng bước. Một số hiệu ứng được chuyển thành thao tác hiện nội dung đơn giản. Biểu đồ, SmartArt, âm thanh, video và một số phông chữ hoặc hiệu ứng chưa được hỗ trợ đầy đủ.",
+      "Chưa hỗ trợ .doc/.ppt cũ hoặc tài liệu chứa macro. Mỗi tệp DOCX hoặc PPTX có dung lượng tối đa 50 MB.",
     ],
   },
   {
@@ -66,7 +61,7 @@ const helpSections = [
     text: "Chọn Download lesson để tải tệp .teachboard. Đây là bản sao dùng để tiếp tục chỉnh sửa. Chọn Open lesson, đợi kiểm tra rồi chọn Open checked lesson để khôi phục.",
     items: [
       "Lưu trữ của trình duyệt có thể bị xóa, mất quyền ghi hoặc hết dung lượng. Tải bản sao định kỳ, nhất là trước khi dọn dữ liệu trình duyệt.",
-      "Cửa sổ riêng tư và thiết bị dùng chung cần được cân nhắc trước khi lưu tài liệu.",
+      "Không giữ bản duy nhất trong cửa sổ riêng tư vì dữ liệu có thể bị xóa khi đóng cửa sổ.",
       "Export tạo PNG/PDF trình bày. Bản xuất này có thể dùng lớp ảnh cho một số nội dung và không thay thế tệp .teachboard.",
       "Khi khôi phục lỗi, giữ tệp gốc và đọc thông báo. Tránh xóa bài hiện tại để thử lại.",
     ],
@@ -105,15 +100,11 @@ export function InfoPage({
             <header className="info-heading">
               <p className="section-topic">Cập nhật sản phẩm</p>
               <h1>
-                Từng bước,
+                Có gì mới
                 <br />
-                thêm cách giảng.
+                trên bảng giảng?
               </h1>
-              <p>
-                Những thay đổi đã có trong mã nguồn hiện tại. Trạng thái mở
-                editor được hiển thị riêng.
-              </p>
-              <AvailabilityNote available={available} />
+              <p>Các tính năng mới giúp bạn soạn bài và trình bày trên bảng.</p>
             </header>
             <div className="update-list">
               {updates.map((update) => (
@@ -133,11 +124,8 @@ export function InfoPage({
               ))}
             </div>
             <div className="info-callout">
-              <h2>Xem rõ bản hiện tại.</h2>
-              <p>
-                Hướng dẫn mô tả cách dùng và giới hạn của các định dạng tài
-                liệu.
-              </p>
+              <h2>Cần hướng dẫn sử dụng?</h2>
+              <p>Xem cách viết trên bảng, nhập tài liệu và lưu bài giảng.</p>
               <a className="text-link" href="/help">
                 Đọc hướng dẫn <Arrow />
               </a>
@@ -148,15 +136,14 @@ export function InfoPage({
             <header className="info-heading">
               <p className="section-topic">Bắt đầu sử dụng</p>
               <h1>
-                Mở bài.
+                Bắt đầu với
                 <br />
-                Tiếp mạch giảng.
+                bảng giảng.
               </h1>
               <p>
-                Một hướng dẫn ngắn cho các công cụ đã có. Một số tên nút trong
-                editor hiện dùng tiếng Anh.
+                Cách viết, mở tài liệu và lưu lại bài giảng. Tên nút trong hướng
+                dẫn được giữ như trên thanh công cụ.
               </p>
-              <AvailabilityNote available={available} />
             </header>
             <div className="help-layout">
               <nav className="help-index" aria-label="Mục lục hướng dẫn">
@@ -184,8 +171,7 @@ export function InfoPage({
               </div>
             </div>
             <div className="info-callout">
-              <h2>Trạng thái của bảng giảng.</h2>
-              <AvailabilityNote available={available} />
+              <h2>Sẵn sàng bắt đầu bài giảng?</h2>
               <EditorAction available={available} />
             </div>
           </>
@@ -198,17 +184,16 @@ export function InfoPage({
                 thiết bị của bạn.
               </h1>
               <p>
-                Cách {product.name} xử lý dữ liệu trong bản hiện tại, cùng những
-                điều cần biết trước khi đưa tài liệu vào trình duyệt.
+                Cách {product.name} lưu bài giảng và xử lý tài liệu của bạn.
               </p>
               <p className="info-date">Cập nhật ngày 8 tháng 11, 2026</p>
             </header>
             <div className="privacy-content">
               <Article id="luu-tru" title="Lưu trong trình duyệt">
                 <p>
-                  Editor dùng IndexedDB để lưu bài giảng, tài liệu nguồn và hình
-                  ảnh trên thiết bị. Mã nguồn hiện tại chưa có tài khoản, kho
-                  bài giảng đám mây hoặc đồng bộ giữa các máy.
+                  Bài giảng, tài liệu và hình ảnh được lưu trong trình duyệt
+                  trên thiết bị của bạn. Ứng dụng không đồng bộ bài giảng giữa
+                  các máy và không yêu cầu tài khoản.
                 </p>
                 <p>
                   Dữ liệu thuộc từng địa chỉ website và hồ sơ trình duyệt. Mở
@@ -219,10 +204,9 @@ export function InfoPage({
               </Article>
               <Article id="tai-lieu" title="Tài liệu được xử lý thế nào?">
                 <p>
-                  Luồng nhập PDF, DOCX và PPTX đọc tệp cục bộ trong trình duyệt
-                  và các worker của ứng dụng. Bản hiện tại không gửi tệp bài
-                  giảng đến dịch vụ chuyển đổi hoặc AI. Các liên kết tài nguyên
-                  ngoài trong tài liệu nhập bị chặn trong luồng được hỗ trợ.
+                  PDF, DOCX và PPTX được đọc và xử lý trong trình duyệt. Ứng
+                  dụng không gửi tệp của bạn đến dịch vụ chuyển đổi hoặc AI. Tài
+                  nguyên từ liên kết bên ngoài trong tài liệu nhập bị chặn.
                 </p>
                 <p>
                   Tài liệu gốc và ảnh nhúng có thể nằm trong bản sao
@@ -238,15 +222,14 @@ export function InfoPage({
                   phục vụ và vận hành website theo chính sách của họ.
                 </p>
                 <p>
-                  Khi editor được mở, SDK tldraw có thể tải tài nguyên hoặc kiểm
-                  tra giấy phép qua hạ tầng của tldraw. Hành vi phụ thuộc loại
-                  giấy phép. Mã SDK đang dùng có thể gửi phiên bản SDK, loại/mã
-                  giấy phép và URL trang cho một số trạng thái giấy phép.
+                  Khi mở bảng, thư viện vẽ tldraw có thể tải tài nguyên và gửi
+                  phiên bản thư viện, mã giấy phép cùng địa chỉ trang đến tldraw
+                  để thống kê sử dụng. Nội dung bảng và tài liệu của bạn không
+                  nằm trong thông tin này.
                 </p>
                 <p>
-                  Trang giới thiệu dùng ảnh và phông chữ lưu cùng website. Mã
-                  nguồn hiện tại chưa tích hợp dịch vụ phân tích truy cập, quảng
-                  cáo hoặc AI Tutor.
+                  Trang giới thiệu dùng ảnh và phông chữ lưu cùng website. Trang
+                  này không dùng quảng cáo hoặc công cụ phân tích truy cập.
                 </p>
                 <p>
                   <a href="https://vercel.com/legal/privacy-policy">
@@ -254,16 +237,15 @@ export function InfoPage({
                   </a>{" "}
                   ·{" "}
                   <a href="https://tldraw.dev/sdk-features/license-key">
-                    Thông tin giấy phép tldraw
+                    Thông tin dữ liệu từ tldraw
                   </a>
                 </p>
               </Article>
               <Article id="bao-ve" title="Chủ động giữ bài giảng">
                 <p>
                   Tải bản sao trước khi dọn dữ liệu trình duyệt, đổi thiết bị
-                  hoặc chuyển tên miền. Nếu dùng chung máy, cân nhắc ai có thể
-                  mở lại hồ sơ trình duyệt đó. Ứng dụng hiện chưa có tài khoản
-                  để phân quyền truy cập bài lưu cục bộ.
+                  hoặc chuyển tên miền. Nếu dùng chung máy, người khác dùng cùng
+                  hồ sơ trình duyệt có thể mở lại bài đã lưu.
                 </p>
                 <p>
                   Bạn có thể xóa dữ liệu website trong cài đặt trình duyệt sau
@@ -274,11 +256,6 @@ export function InfoPage({
                   Cách sao lưu và khôi phục <Arrow />
                 </a>
               </Article>
-              <p className="info-note">
-                Trang này mô tả cách xử lý dữ liệu của bản hiện tại. Chính sách
-                pháp lý và điều khoản phát hành cần được chủ sản phẩm rà soát
-                khi mở rộng dịch vụ.
-              </p>
             </div>
           </>
         )}
