@@ -133,7 +133,7 @@ export class PageController {
   }
   paper(update: Partial<Paper>) {
     if (!this.writable) return;
-    if (validatePaper(this.editor.getCurrentPage().meta.paper).kind === "pdf")
+    if (validatePaper(this.editor.getCurrentPage().meta.paper).kind !== "blank")
       return;
     this.engine.session.activate("main");
     const p = this.editor.getCurrentPage(),
@@ -275,10 +275,10 @@ export class PagePreviews {
         }))
           rect.setAttribute(k, String(v));
         doc.documentElement.prepend(rect);
-        if (paper.kind === "pdf" && this.background) {
+        if (paper.kind !== "blank" && this.background) {
           const href = await this.background(paper, signal);
           if (this.#closed || signal?.aborted) return;
-          if (!href) throw new Error("PDF preview background unavailable.");
+          if (!href) throw new Error("Page preview background unavailable.");
           const image = doc.createElementNS(
             "http://www.w3.org/2000/svg",
             "image",

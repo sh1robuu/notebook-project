@@ -121,8 +121,20 @@ export async function verifySources(input: unknown): Promise<PdfSources> {
 }
 /** Metadata only: original bytes live in immutable IDB rows / separate ZIP entries. */
 export function serializedLesson(lesson: Lesson) {
+  const { pptxDecks, pptxSources, ...base } = lesson;
   return {
-    ...lesson,
+    ...base,
+    ...(lesson.version === 6
+      ? {
+          pptxDecks,
+          pptxSources: Object.fromEntries(
+            Object.entries(pptxSources).map(([id, { bytes: _, ...meta }]) => [
+              id,
+              meta,
+            ]),
+          ),
+        }
+      : {}),
     wordSources: Object.fromEntries(
       Object.entries(lesson.wordSources ?? {}).map(
         ([id, { bytes: _, ...meta }]) => [id, meta],
@@ -142,7 +154,7 @@ export function hydrateSources(
 ): unknown {
   if (!object(value))
     throw new WorkspaceError("source", "Invalid lesson metadata.");
-  if (![4, 5].includes(Number(value.version))) return value;
+  if (![4, 5, 6].includes(Number(value.version))) return value;
   if (!object(value.pdfSources))
     throw new WorkspaceError("source", "Missing PDF source manifest.");
   return {

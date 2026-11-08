@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { useValue } from "tldraw";
 import type { BoardEngine } from "../modules/board/engine.ts";
 import type { ExportOptions } from "../modules/pdf/export.ts";
 import { checkAbort } from "../modules/pdf/runtime.ts";
+import { validatePaper } from "../modules/workspace/lesson-view.ts";
+import { playbackKey } from "./pptx/SlideCanvas.tsx";
 const defaults: ExportOptions = {
   format: "png",
   scope: "current",
@@ -15,11 +18,18 @@ const defaults: ExportOptions = {
 };
 export function ExportDialog({ engine }: { engine: BoardEngine }) {
   const session = engine.session;
+  const editor = engine.pages.editor;
+  const paper = useValue(
+    "export current paper",
+    () => validatePaper(editor.getCurrentPage().meta.paper),
+    [editor],
+  );
   const [open, setOpen] = useState(false),
     [options, setOptions] = useState(defaults),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [progress, setProgress] = useState("");
+    [progress, setProgress] = useState(""),
+    [currentBuild, setCurrentBuild] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null),
     abort = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -59,11 +69,18 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
           return p === undefined ? [] : [[id, p]];
         }),
       );
+      const frame = session.slides.getSnapshot();
+      const slideFrame =
+        currentBuild &&
+        paper.kind === "pptx" &&
+        frame.key === playbackKey(snapshot.pageId, paper.sourceId!)
+          ? { pageId: snapshot.pageId, hiddenIds: [...frame.hidden] }
+          : undefined;
       const { createExport } = await import("../modules/pdf/export.ts");
       checkAbort(job.signal);
       const result = await createExport(
         snapshot,
-        { ...options, selected },
+        { ...options, selected, slideFrame },
         passwords,
         job.signal,
         setProgress,
@@ -223,7 +240,9 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
               checked={options.background}
               onChange={(ev) => update({ background: ev.target.checked })}
             />
-            Include PDF / paper background
+            {paper.kind === "pptx"
+              ? "Include slide / paper background"
+              : "Include PDF / paper background"}
           </label>
           <label>
             <input
@@ -249,6 +268,23 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
               </select>
             </label>
           ) : null}
+          {paper.kind === "pptx" &&
+          options.background &&
+          options.scope !== "scratchpad" ? (
+            <label>
+              PowerPoint build state
+              <select
+                disabled={busy}
+                value={currentBuild ? "current" : "all"}
+                onChange={(event) =>
+                  setCurrentBuild(event.target.value === "current")
+                }
+              >
+                <option value="all">All supported builds</option>
+                <option value="current">Current build (active slide)</option>
+              </select>
+            </label>
+          ) : null}
         </div>
         <p>
           PNG output is opaque. Viewport, controls, selection handles and laser
@@ -259,6 +295,13 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
           Word blocks use raster layers; editable source stays in the lesson
           archive. Native DOCX export is not available.
         </p>
+        {paper.kind === "pptx" ? (
+          <p>
+            PowerPoint exports use static slide backgrounds. Other slides in a
+            range include all supported builds. Annotations are included
+            according to your export settings.
+          </p>
+        ) : null}
         {options.format === "pdf" ? (
           <p>
             Original PDF text and vectors are retained on supported static

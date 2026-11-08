@@ -37,6 +37,8 @@ import { WordTerminal } from "./documents/WordTerminal.tsx";
 import { TeachingControls } from "./documents/TeachingControls.tsx";
 import { WordSourcesContext } from "../modules/documents/render.tsx";
 import { wordVisibility } from "../modules/documents/teaching.ts";
+import { PptxImport } from "./pptx/PptxImport.tsx";
+import { SlideControls } from "./pptx/SlideControls.tsx";
 const canvasComponents = { Background: PaperBackground };
 const customTools = [PartialEraserTool, LaserTool];
 export function BoardScreen({ workspace }: { workspace: LocalWorkspace }) {
@@ -95,12 +97,14 @@ export function BoardScreen({ workspace }: { workspace: LocalWorkspace }) {
           <div className="document-actions">
             <PdfImport engine={main} />
             <WordTerminal engine={main} />
+            <PptxImport engine={main} />
             <ExportDialog engine={main} />
             <PdfControls engine={main} />
             <TeachingControls engine={main} />
           </div>
         </PageManager>
       ) : null}
+      {main ? <SlideControls engine={main} /> : null}
       <div className="work-area">
         {active && !(ui.reading && ui.active === "main") ? (
           <Toolbar engine={active} />

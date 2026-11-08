@@ -14,6 +14,9 @@ import type { DocumentModel } from "../documents/model.ts";
 import { validateDocumentSources } from "../documents/sources.ts";
 import type { DocumentSources } from "../documents/sources.ts";
 import { readImageHeader } from "../media/image-format.ts";
+import { validatePptxDecks, validatePptxSources } from "../pptx/sources.ts";
+import type { PptxDecks } from "../pptx/sources.ts";
+import type { PptxSources } from "../pptx/model.ts";
 export {
   SDK_VERSION,
   MAX_ARCHIVE_BYTES,
@@ -24,7 +27,7 @@ export {
   object,
 } from "./contracts.ts";
 export type Lesson = {
-  version: 5;
+  version: 5 | 6;
   sdkVersion: string;
   id: string;
   title: string;
@@ -39,6 +42,8 @@ export type Lesson = {
   pdfSources: PdfSources;
   wordSources: DocumentSources;
   wordDraft: DocumentModel | null;
+  pptxDecks: PptxDecks;
+  pptxSources: PptxSources;
 };
 export function blankDrawing(pageId = "page:page"): TLStoreSnapshot {
   const d = DocumentRecordType.create({
@@ -52,7 +57,7 @@ export function blankDrawing(pageId = "page:page"): TLStoreSnapshot {
   return { schema: lessonSchema.serialize(), store: { [d.id]: d, [p.id]: p } };
 }
 export function validateLesson(value: unknown): Lesson {
-  if (!object(value) || ![1, 2, 3, 4, 5].includes(value.version as number))
+  if (!object(value) || ![1, 2, 3, 4, 5, 6].includes(value.version as number))
     throw new WorkspaceError(
       "version",
       "This lesson uses an unsupported format version.",
@@ -175,6 +180,19 @@ export function validateLesson(value: unknown): Lesson {
     Number(value.version) >= 5 && value.wordDraft != null
       ? validateDocument(value.wordDraft, wordSources)
       : null;
+  if (
+    value.version !== 6 &&
+    [value.pptxDecks, value.pptxSources].some(
+      (pool) =>
+        pool !== undefined && (!object(pool) || Object.keys(pool).length),
+    )
+  )
+    throw new WorkspaceError(
+      "version",
+      "A legacy lesson contains newer PowerPoint content.",
+    );
+  const pptxSources = validatePptxSources(value.pptxSources);
+  const pptxDecks = validatePptxDecks(value.pptxDecks, pptxSources);
   let imageBytes = 0,
     imagePixels = 0,
     imageCount = 0;
@@ -201,10 +219,11 @@ export function validateLesson(value: unknown): Lesson {
       "Native and Word images exceed the shared 50 MB /32 megapixel /512-image budget.",
     );
   if (
-    [...Object.values(pdfSources), ...Object.values(wordSources)].reduce(
-      (sum, source) => sum + source.size,
-      0,
-    ) > 250_000_000
+    [
+      ...Object.values(pdfSources),
+      ...Object.values(wordSources),
+      ...Object.values(pptxSources),
+    ].reduce((sum, source) => sum + source.size, 0) > 250_000_000
   )
     throw new WorkspaceError(
       "limit",
@@ -287,6 +306,25 @@ export function validateLesson(value: unknown): Lesson {
             "A page references a missing or incompatible PDF source.",
           );
       }
+      if (paper.kind === "pptx") {
+        if (value.version !== 6)
+          throw new WorkspaceError(
+            "version",
+            "A legacy lesson contains a newer PowerPoint slide.",
+          );
+        const deck = pptxDecks[paper.sourceId!];
+        if (
+          !deck ||
+          deck.width !== paper.width ||
+          deck.height !== paper.height ||
+          !deck.slides.some((slide) => slide.id === paper.slideId) ||
+          r.meta.word !== undefined
+        )
+          throw new WorkspaceError(
+            "source",
+            "A page references a missing or incompatible PowerPoint slide.",
+          );
+      }
     }
   for (const shape of Object.values(main.document.store)) {
     if (shape.typeName !== "shape") continue;
@@ -344,11 +382,11 @@ export function validateLesson(value: unknown): Lesson {
   )
     throw new WorkspaceError(
       "surface",
-      "Scratchpad cannot contain a PDF background.",
+      "Scratchpad cannot contain an imported document background.",
     );
   return {
     ...value,
-    version: 5,
+    version: value.version === 6 ? 6 : 5,
     document: main.document,
     scratchpad: {
       pageId: scratchInput.pageId,
@@ -358,6 +396,8 @@ export function validateLesson(value: unknown): Lesson {
     pdfSources,
     wordSources,
     wordDraft,
+    pptxDecks,
+    pptxSources,
   } as Lesson;
 }
 export function hydrateSurface(

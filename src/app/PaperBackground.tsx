@@ -1,14 +1,14 @@
+import { useContext } from "react";
 import { useEditor, useValue } from "tldraw";
 import { validatePaper } from "../modules/workspace/lesson-view.ts";
 import { paperColors } from "../modules/board/pages.ts";
-import { PdfCanvas } from "./PdfPage.tsx";
+import { PdfCanvas, PdfSessionContext } from "./PdfPage.tsx";
+import { SlidePaper } from "./pptx/SlideCanvas.tsx";
 export function PaperBackground() {
+  const session = useContext(PdfSessionContext);
   const editor = useEditor(),
-    paper = useValue(
-      "page paper",
-      () => validatePaper(editor.getCurrentPage().meta.paper),
-      [editor],
-    ),
+    page = useValue("page paper", () => editor.getCurrentPage(), [editor]),
+    paper = validatePaper(page.meta.paper),
     camera = useValue("paper camera", () => editor.getCamera(), [editor]);
   return (
     <div className="tl-background paper-background" aria-hidden="true">
@@ -26,6 +26,15 @@ export function PaperBackground() {
         {paper.kind === "pdf" ? (
           <PdfCanvas
             key={paper.sourceId + ":" + paper.pageIndex}
+            paper={paper}
+            zoom={camera.z}
+          />
+        ) : null}
+        {paper.kind === "pptx" && session ? (
+          <SlidePaper
+            key={page.id}
+            session={session}
+            pageId={page.id}
             paper={paper}
             zoom={camera.z}
           />

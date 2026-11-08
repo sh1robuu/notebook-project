@@ -15,6 +15,7 @@ import {
   verifySources,
 } from "../pdf/sources.ts";
 import { verifyDocumentSources } from "../documents/sources.ts";
+import { hydratePptxSources, verifyPptxSources } from "../pptx/sources.ts";
 const encoder = new TextEncoder(),
   decoder = new TextDecoder("utf-8", { fatal: true });
 const MAX_MANIFEST_BYTES = 512_000;
@@ -29,11 +30,18 @@ export async function encodeArchive(input: Lesson): Promise<Uint8Array> {
     payload = encoder.encode(JSON.stringify(serializedLesson(lesson)));
   await verifySources(lesson.pdfSources);
   await verifyDocumentSources(lesson.wordSources);
+  await verifyPptxSources(lesson.pptxSources);
   const entries: Record<string, Uint8Array> = { "lesson.json": payload };
   for (const source of Object.values(lesson.pdfSources))
     entries["sources/" + source.sha256 + ".pdf"] = source.bytes;
   for (const source of Object.values(lesson.wordSources))
     entries["word/" + source.sha256 + ".bin"] = source.bytes;
+  for (const source of Object.values(lesson.pptxSources)) {
+    const name = source.id.startsWith("pptx:")
+      ? `pptx/${source.sha256}.pptx`
+      : `pptx-images/${source.sha256}.bin`;
+    entries[name] = source.bytes;
+  }
   if (
     Object.values(entries).reduce((n, b) => n + b.length, 0) +
       MAX_MANIFEST_BYTES >
@@ -46,7 +54,7 @@ export async function encodeArchive(input: Lesson): Promise<Uint8Array> {
   const manifest = encoder.encode(
     JSON.stringify({
       format: "teachboard",
-      version: 3,
+      version: lesson.version === 6 ? 4 : 3,
       files: Object.fromEntries(
         await Promise.all(
           Object.entries(entries).map(async ([name, bytes]) => [
@@ -79,7 +87,9 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
         if (
           (!["manifest.json", "lesson.json"].includes(file.name) &&
             !/^sources\/[a-f0-9]{64}\.pdf$/.test(file.name) &&
-            !/^word\/[a-f0-9]{64}\.bin$/.test(file.name)) ||
+            !/^word\/[a-f0-9]{64}\.bin$/.test(file.name) &&
+            !/^pptx\/[a-f0-9]{64}\.pptx$/.test(file.name) &&
+            !/^pptx-images\/[a-f0-9]{64}\.bin$/.test(file.name)) ||
           seen.has(file.name)
         )
           throw new WorkspaceError(
@@ -126,7 +136,7 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
   if (
     !object(manifest) ||
     manifest.format !== "teachboard" ||
-    ![1, 2, 3].includes(Number(manifest.version))
+    ![1, 2, 3, 4].includes(manifest.version as number)
   )
     throw new WorkspaceError(
       "version",
@@ -172,7 +182,20 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
       .filter(([name]) => name.startsWith("word/"))
       .map(([name, data]) => ["word:" + name.slice(5, -4), data]),
   );
-  if (object(lesson) && lesson.version === 5 && object(lesson.wordSources)) {
+  const pptxBytes = Object.fromEntries(
+    Object.entries(files).flatMap(([name, data]) => {
+      if (name.startsWith("pptx/"))
+        return [["pptx:" + name.slice(5, -5), data]];
+      if (name.startsWith("pptx-images/"))
+        return [["pptx-image:" + name.slice(12, -4), data]];
+      return [];
+    }),
+  );
+  if (
+    object(lesson) &&
+    (lesson.version === 5 || lesson.version === 6) &&
+    object(lesson.wordSources)
+  ) {
     lesson = {
       ...lesson,
       wordSources: Object.fromEntries(
@@ -183,6 +206,11 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
       ),
     };
   }
+  if (object(lesson) && lesson.version === 6)
+    lesson = {
+      ...lesson,
+      pptxSources: hydratePptxSources(lesson.pptxSources, pptxBytes),
+    };
   const validated = validateLesson(hydrateSources(lesson, sourceBytes));
   if (
     Object.keys(validated.pdfSources).length !== Object.keys(sourceBytes).length
@@ -192,11 +220,23 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
   if (
     Object.keys(validated.wordSources).length !==
       Object.keys(wordBytes).length ||
-    (manifest.version !== 3 && Object.keys(wordBytes).length)
+    (Number(manifest.version) < 3 && Object.keys(wordBytes).length)
   )
     throw new WorkspaceError("integrity", "Unexpected Word source in archive.");
   await verifyDocumentSources(validated.wordSources);
-  for (const source of Object.values(validated.wordSources)) {
+  if (
+    (manifest.version === 4) !== (validated.version === 6) ||
+    Object.keys(validated.pptxSources).length !== Object.keys(pptxBytes).length
+  )
+    throw new WorkspaceError(
+      "integrity",
+      "Unexpected PowerPoint sources or version in archive.",
+    );
+  await verifyPptxSources(validated.pptxSources);
+  for (const source of [
+    ...Object.values(validated.wordSources),
+    ...Object.values(validated.pptxSources),
+  ]) {
     if (!["image/png", "image/jpeg"].includes(source.mime)) continue;
     if (typeof createImageBitmap === "undefined") {
       if (browserRealm())
@@ -212,7 +252,15 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
         new Blob([new Uint8Array(source.bytes).buffer], { type: source.mime }),
       );
       try {
-        if (bitmap.width !== header.width || bitmap.height !== header.height)
+        const rotatedPowerPointJpeg =
+          source.id.startsWith("pptx-image:") &&
+          source.mime === "image/jpeg" &&
+          bitmap.width === header.height &&
+          bitmap.height === header.width;
+        if (
+          (bitmap.width !== header.width || bitmap.height !== header.height) &&
+          !rotatedPowerPointJpeg
+        )
           throw new Error("Document image dimensions differ.");
       } finally {
         bitmap.close();
@@ -220,7 +268,7 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
     } catch {
       throw new WorkspaceError(
         "image",
-        "A Word image cannot be decoded. The current lesson was kept; retain the original document.",
+        "A document image cannot be decoded. The current lesson was kept; retain the original document.",
       );
     }
   }

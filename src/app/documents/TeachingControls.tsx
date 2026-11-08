@@ -9,7 +9,10 @@ export function TeachingControls({ engine }: { engine: BoardEngine }) {
       controller.getSnapshot,
     ),
     model = controller.model();
+  const teachingActive = Boolean(model) && state.enabled;
+  useEffect(() => () => controller.dispose(), [controller]);
   useEffect(() => {
+    if (!teachingActive) return;
     const enabled = () =>
       controller.getSnapshot().enabled &&
       !engine.isPointing() &&
@@ -33,9 +36,8 @@ export function TeachingControls({ engine }: { engine: BoardEngine }) {
     ];
     return () => {
       for (const stop of dispose) stop();
-      controller.dispose();
     };
-  }, [controller, engine]);
+  }, [controller, engine, teachingActive]);
   if (!model) return null;
   function edit() {
     if (

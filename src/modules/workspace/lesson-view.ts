@@ -2,12 +2,13 @@ import { object, WorkspaceError, MAX_WORLD_COORDINATE } from "./contracts.ts";
 export type SurfaceId = "main" | "scratchpad";
 export type Camera = { x: number; y: number; z: number };
 export type Paper = {
-  kind: "blank" | "pdf";
+  kind: "blank" | "pdf" | "pptx";
   color: "white" | "dark" | "green";
   width: number;
   height: number;
   sourceId?: string;
   pageIndex?: number;
+  slideId?: string;
 };
 export type LessonView = {
   mainCameras: Record<string, Camera>;
@@ -31,13 +32,13 @@ export function validatePaper(value: unknown): Paper {
   if (value === undefined) return defaultPaper();
   if (
     !object(value) ||
-    !["blank", "pdf"].includes(String(value.kind)) ||
+    !["blank", "pdf", "pptx"].includes(String(value.kind)) ||
     !["white", "dark", "green"].includes(String(value.color)) ||
     ![value.width, value.height].every(
       (n) =>
         typeof n === "number" &&
         Number.isFinite(n) &&
-        n >= (value.kind === "pdf" ? 1 : 64) &&
+        n >= (value.kind === "blank" ? 64 : 1) &&
         n <= 100_000,
     )
   )
@@ -55,6 +56,15 @@ export function validatePaper(value: unknown): Paper {
       value.color !== "white")
   )
     throw new WorkspaceError("paper", "Invalid PDF background mapping.");
+  if (
+    value.kind === "pptx" &&
+    (typeof value.sourceId !== "string" ||
+      !/^pptx:[a-f0-9]{64}$/.test(value.sourceId) ||
+      typeof value.slideId !== "string" ||
+      !/^slide:\d{1,10}$/.test(value.slideId) ||
+      value.color !== "white")
+  )
+    throw new WorkspaceError("paper", "Invalid PowerPoint slide mapping.");
   return {
     kind: value.kind as Paper["kind"],
     color: value.color as Paper["color"],
@@ -65,6 +75,9 @@ export function validatePaper(value: unknown): Paper {
           sourceId: value.sourceId as string,
           pageIndex: Number(value.pageIndex),
         }
+      : {}),
+    ...(value.kind === "pptx"
+      ? { sourceId: value.sourceId as string, slideId: value.slideId as string }
       : {}),
   };
 }

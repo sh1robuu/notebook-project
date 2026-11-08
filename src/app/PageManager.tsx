@@ -106,7 +106,7 @@ export function PageManager({
                   Paper color{" "}
                   <select
                     aria-label="Paper color"
-                    disabled={readonly || paper.kind === "pdf"}
+                    disabled={readonly || paper.kind !== "blank"}
                     value={paper.color}
                     onChange={(ev) =>
                       engine.pages.paper({
@@ -123,10 +123,10 @@ export function PageManager({
                   Paper size{" "}
                   <select
                     aria-label="Paper size"
-                    disabled={readonly || paper.kind === "pdf"}
+                    disabled={readonly || paper.kind !== "blank"}
                     value={
-                      paper.kind === "pdf"
-                        ? "pdf"
+                      paper.kind !== "blank"
+                        ? paper.kind
                         : Math.min(paper.width, paper.height) === 794
                           ? "a4"
                           : "board"
@@ -139,9 +139,10 @@ export function PageManager({
                       )
                     }
                   >
-                    {paper.kind === "pdf" ? (
-                      <option value="pdf">
-                        PDF · {paper.width} × {paper.height}
+                    {paper.kind !== "blank" ? (
+                      <option value={paper.kind}>
+                        {paper.kind === "pdf" ? "PDF" : "Slide"} ·{" "}
+                        {Math.round(paper.width)} × {Math.round(paper.height)}
                       </option>
                     ) : null}
                     <option value="board">Board · 1280 × 960</option>
@@ -152,7 +153,7 @@ export function PageManager({
                   Paper orientation{" "}
                   <select
                     aria-label="Paper orientation"
-                    disabled={readonly || paper.kind === "pdf"}
+                    disabled={readonly || paper.kind !== "blank"}
                     value={
                       paper.width >= paper.height ? "landscape" : "portrait"
                     }

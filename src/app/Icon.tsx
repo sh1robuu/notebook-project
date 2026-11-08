@@ -19,6 +19,12 @@ const paths = {
   fit: "M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5",
   check: "m5 12 4 4L19 6",
   close: "m6 6 12 12M6 18 18 6",
+  previousSlide: "M5 5v14m12-13-6 6 6 6",
+  nextSlide: "M19 5v14M7 6l6 6-6 6",
+  previousBuild: "m15 6-6 6 6 6",
+  nextBuild: "m9 6 6 6-6 6",
+  restart: "M3 4v6h6M4 10a8 8 0 1 1 1 7",
+  reveal: "m3 12 9-6 9 6-9 6-9-6Zm9-1v2",
 } as const;
 export function Icon({ name }: { name: keyof typeof paths }) {
   return (

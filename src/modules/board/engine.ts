@@ -29,6 +29,7 @@ import { installLaser } from "./laser.ts";
 import { installTextCaret } from "./text-caret.ts";
 import { bindCapacity } from "./capacity.ts";
 import { bindWordSources } from "../documents/editor-sources.ts";
+import { paintSlide, slideForPaper } from "../pptx/render.ts";
 export type BoardTool =
   | "draw"
   | "highlight"
@@ -134,6 +135,31 @@ export class BoardEngine {
     this.pages = new PageController(editor, this);
     this.#dispose.push(bindCapacity(editor, () => session.remainingShapes()));
     this.previews = new PagePreviews(editor, async (paper, signal) => {
+      if (paper.kind === "pptx") {
+        const lesson = session.workspace.lesson;
+        const scene = slideForPaper(lesson, paper);
+        if (!scene) return undefined;
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(240 / paper.width, 180 / paper.height);
+        canvas.width = Math.max(1, Math.round(paper.width * scale));
+        canvas.height = Math.max(1, Math.round(paper.height * scale));
+        try {
+          const ctx = canvas.getContext("2d")!;
+          ctx.scale(canvas.width / paper.width, canvas.height / paper.height);
+          await paintSlide(
+            ctx,
+            scene.slide,
+            paper.width,
+            paper.height,
+            lesson.pptxSources,
+            new Set(),
+            signal ?? AbortSignal.timeout(30000),
+          );
+          return canvas.toDataURL("image/png");
+        } finally {
+          canvas.width = canvas.height = 0;
+        }
+      }
       const source = session.workspace.lesson.pdfSources[paper.sourceId ?? ""];
       if (!source) return undefined;
       const image = await session.pdf.paint(

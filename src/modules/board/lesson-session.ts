@@ -12,6 +12,7 @@ import {
 } from "../workspace/model.ts";
 import type { Lesson } from "../workspace/model.ts";
 import { PdfRuntime } from "../pdf/runtime.ts";
+import { SlidePlayback } from "../pptx/playback.ts";
 import { validateDocument } from "../documents/model.ts";
 import type { DocumentModel } from "../documents/model.ts";
 import { verifyDocumentSources } from "../documents/sources.ts";
@@ -48,6 +49,7 @@ type SaveValue = Pick<
 export class LessonSession {
   readonly workspace: LocalWorkspace;
   pdf = new PdfRuntime();
+  readonly slides = new SlidePlayback();
   readonly engines = new Map<SurfaceId, BoardEngine>();
   readonly saving: SaveCoordinator<SaveValue>;
   lastCommit: CommitReceipt | undefined;
@@ -436,6 +438,7 @@ export class LessonSession {
       this.#retired.clear();
       this.pdf.close();
       this.pdf = new PdfRuntime();
+      this.slides.clear();
       // Native Store.history retains up to 1000 reactive record diffs even after
       // clearHistory(). A different lesson needs fresh stores, not cross-lesson
       // retained graphs. Page/layout changes keep their existing editors.
@@ -464,6 +467,7 @@ export class LessonSession {
     this.#closed = true;
     this.#ownershipDispose();
     this.pdf.close();
+    this.slides.clear();
     this.#shortcuts?.();
     this.saving.close();
     this.#listeners.clear();

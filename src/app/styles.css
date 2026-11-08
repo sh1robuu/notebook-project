@@ -457,6 +457,68 @@ p {
   overflow: hidden;
   pointer-events: none;
 }
+.pptx-frame {
+  position: relative;
+  width: 100%;
+  background: white;
+}
+.pptx-frame canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pptx-preview {
+  margin-block: 12px;
+  border: 1px solid var(--control);
+}
+.pptx-import input[type="file"] {
+  display: block;
+  max-width: 100%;
+  margin-block: 8px;
+}
+.pptx-controls {
+  margin: 0 12px 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--edge);
+  background: var(--paper);
+}
+.pptx-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  overflow-wrap: anywhere;
+  margin-bottom: 4px;
+}
+.pptx-status span,
+.pptx-warnings {
+  color: var(--muted);
+}
+.pptx-control-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px;
+}
+.pptx-control-scroll button {
+  white-space: nowrap;
+  min-height: 44px;
+}
+.pptx-control-icon {
+  display: none;
+}
+.pptx-warnings summary {
+  width: fit-content;
+  padding-block: 4px;
+  cursor: pointer;
+}
+.pptx-warnings ul {
+  max-height: 9rem;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
 .presentation-controls {
   display: flex;
   gap: 6px;
@@ -1048,6 +1110,28 @@ dialog .dialog-title {
   }
 }
 @media (max-width: 680px) {
+  .pptx-control-scroll {
+    gap: 4px;
+  }
+  .pptx-control-scroll button {
+    display: grid;
+    place-items: center;
+    flex: 0 0 44px;
+    padding: 0;
+  }
+  .pptx-control-label {
+    display: none;
+  }
+  .pptx-control-icon {
+    display: inline-flex;
+  }
+  .workspace:has(.pptx-controls) .tool-list {
+    display: flex;
+    overflow-x: auto;
+  }
+  .workspace:has(.pptx-controls) .tool-list .tool {
+    flex: 0 0 62px;
+  }
   .surface-controls {
     min-height: 46px;
     padding-block: 1px;

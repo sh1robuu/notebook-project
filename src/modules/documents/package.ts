@@ -107,7 +107,10 @@ export function safePart(base: string, target: string): string {
   }
   return parts.join("/");
 }
-export function readOoxmlPackage(bytes: Uint8Array): OoxmlPackage {
+export function readOoxmlPackage(
+  bytes: Uint8Array,
+  kind: "docx" | "pptx" = "docx",
+): OoxmlPackage {
   if (
     bytes.length < 4 ||
     bytes.length > 50_000_000 ||
@@ -115,7 +118,9 @@ export function readOoxmlPackage(bytes: Uint8Array): OoxmlPackage {
     bytes[1] !== 75
   )
     throw new Error(
-      "This is not a supported DOCX ZIP package (maximum 50 MB). Convert legacy .doc using Word or LibreOffice Save As .docx.",
+      kind === "docx"
+        ? "This is not a supported DOCX ZIP package (maximum 50 MB). Convert legacy .doc using Word or LibreOffice Save As .docx."
+        : "This is not a supported PPTX ZIP package (maximum 50 MB).",
     );
   const seen = new Set<string>();
   let expanded = 0;
@@ -128,6 +133,11 @@ export function readOoxmlPackage(bytes: Uint8Array): OoxmlPackage {
           entry.name.startsWith("/") ||
           /[:\\\u0000-\u001f]/.test(entry.name) ||
           entry.name.split("/").some((p) => p === ".." || p === ".") ||
+          (kind === "pptx" &&
+            (entry.name.length > 512 ||
+              /(^|\/)(?:__proto__|constructor|prototype)(?:\/|$)|%(?:2e|2f|5c)|\/\//i.test(
+                entry.name,
+              ))) ||
           seen.has(entry.name)
         )
           throw new Error("Unsafe or duplicate OOXML ZIP path.");
@@ -137,6 +147,9 @@ export function readOoxmlPackage(bytes: Uint8Array): OoxmlPackage {
           seen.size > 2000 ||
           !Number.isSafeInteger(entry.originalSize) ||
           entry.originalSize < 0 ||
+          (kind === "pptx" &&
+            entry.compression === 0 &&
+            entry.size !== entry.originalSize) ||
           expanded > 100_000_000 ||
           (/\.(xml|rels)$/i.test(entry.name) && entry.originalSize > 8_000_000)
         )
@@ -156,16 +169,20 @@ export function readOoxmlPackage(bytes: Uint8Array): OoxmlPackage {
     });
   } catch (error) {
     throw new Error(
-      error instanceof Error ? error.message : "Unreadable DOCX ZIP package.",
+      error instanceof Error
+        ? error.message
+        : `Unreadable ${kind.toUpperCase()} ZIP package.`,
     );
   }
   if (
     !files["[Content_Types].xml"] ||
     !files["_rels/.rels"] ||
-    !files["word/document.xml"]
+    (kind === "docx" && !files["word/document.xml"])
   )
     throw new Error(
-      "The OOXML package needs content types, relationships and word/document.xml.",
+      kind === "docx"
+        ? "The OOXML package needs content types, relationships and word/document.xml."
+        : "The PPTX package needs content types and root relationships.",
     );
   if (Object.values(files).reduce((n, b) => n + b.length, 0) > 100_000_000)
     throw new Error("OOXML expanded resource budget exceeded.");
@@ -175,7 +192,8 @@ export function readOoxmlPackage(bytes: Uint8Array): OoxmlPackage {
     xml(part) {
       const existing = cache.get(part);
       if (existing) return existing;
-      if (!files[part]) throw new Error(`Missing OOXML part: ${part}`);
+      if (!Object.hasOwn(files, part))
+        throw new Error(`Missing OOXML part: ${part}`);
       let text: string;
       try {
         text = decoder.decode(files[part]);
@@ -192,7 +210,7 @@ export function readOoxmlPackage(bytes: Uint8Array): OoxmlPackage {
       const relPart = part
         ? [...pieces, "_rels", `${name}.rels`].join("/")
         : "_rels/.rels";
-      if (!files[relPart]) return [];
+      if (!Object.hasOwn(files, relPart)) return [];
       const root = pkg.xml(relPart).documentElement!;
       if (root.namespaceURI !== REL || root.localName !== "Relationships")
         throw new Error("Invalid OOXML relationships root.");
@@ -203,13 +221,18 @@ export function readOoxmlPackage(bytes: Uint8Array): OoxmlPackage {
         const id = el.getAttribute("Id") ?? "",
           type = el.getAttribute("Type") ?? "",
           target = el.getAttribute("Target") ?? "",
-          external = el.getAttribute("TargetMode") === "External";
+          mode = el.getAttribute("TargetMode") ?? "",
+          external = mode === "External";
         if (
           !id ||
           id.length > 240 ||
           ids.has(id) ||
           !type ||
           type.length > 500 ||
+          (kind === "pptx" &&
+            (!target ||
+              (mode !== "" && mode !== "Internal" && mode !== "External") ||
+              (!external && /%(?:2e|2f|5c)|\/\//i.test(target)))) ||
           target.length > 2000
         )
           throw new Error("Invalid or duplicate OOXML relationship.");

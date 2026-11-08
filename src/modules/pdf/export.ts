@@ -8,6 +8,7 @@ import { exportEditor } from "./export-editor.tsx";
 import { checkAbort, abortError, PdfRuntime, pdfTask } from "./runtime.ts";
 import { parsePageRange, rasterSize } from "./geometry.ts";
 import { normalizedPath } from "./paths.ts";
+import { paintSlide, slideForPaper } from "../pptx/render.ts";
 import type {
   ExportBounds,
   ExportPage,
@@ -24,6 +25,7 @@ export type ExportOptions = {
   scale: number;
   region: ExportBounds;
   selected: TLShapeId[];
+  slideFrame?: { pageId: string; hiddenIds: string[] };
 };
 const pngBytes = async (canvas: HTMLCanvasElement) =>
   new Uint8Array(
@@ -196,7 +198,7 @@ async function createExportJob(
 }> {
   checkAbort(signal);
   if (!options.background && !options.annotations)
-    throw new Error("Choose the PDF background, annotations, or both.");
+    throw new Error("Choose the page background, annotations, or both.");
   const runtime = new PdfRuntime();
   for (const [id, p] of Object.entries(passwords)) runtime.setPassword(id, p);
   let main: Awaited<ReturnType<typeof exportEditor>> | undefined,
@@ -294,7 +296,17 @@ async function createExportJob(
         editor = await editorFor(req.surface);
       editor.setCurrentPage(req.id);
       const paper = validatePaper(editor.getPage(req.id)!.meta.paper),
-        source = lesson.pdfSources[paper.sourceId ?? ""];
+        source = lesson.pdfSources[paper.sourceId ?? ""],
+        slide = options.background
+          ? slideForPaper(lesson, paper)?.slide
+          : undefined;
+      const hidden = new Set(
+        options.slideFrame?.pageId === req.id
+          ? options.slideFrame.hiddenIds
+          : [],
+      );
+      if (options.background && paper.kind === "pptx" && !slide)
+        throw new Error("PowerPoint slide source is unavailable.");
       let ids = [...editor.getPageShapeIds(req.id)],
         bounds = new Box(0, 0, paper.width, paper.height);
       if (options.scope === "selection") {
@@ -344,6 +356,33 @@ async function createExportJob(
               paper.width * options.scale,
               paper.height * options.scale,
             );
+          }
+          if (slide) {
+            ctx.save();
+            try {
+              ctx.setTransform(
+                options.scale,
+                0,
+                0,
+                options.scale,
+                -bounds.x * options.scale,
+                -bounds.y * options.scale,
+              );
+              await untilAbort(
+                paintSlide(
+                  ctx,
+                  slide,
+                  paper.width,
+                  paper.height,
+                  lesson.pptxSources,
+                  hidden,
+                  signal,
+                ),
+                signal,
+              );
+            } finally {
+              ctx.restore();
+            }
           }
           if (options.annotations && ids.length) {
             const bytes = await annotationsImage(
@@ -413,6 +452,33 @@ async function createExportJob(
         } else {
           page.pdf = { sourceId: source.id, index: paper.pageIndex! };
           usedSources[source.id] = source;
+        }
+      }
+      if (slide) {
+        const scale = 2;
+        const size = reserve(paper.width, paper.height, scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = size.width;
+        canvas.height = size.height;
+        try {
+          const ctx = canvas.getContext("2d")!;
+          ctx.scale(canvas.width / paper.width, canvas.height / paper.height);
+          await untilAbort(
+            paintSlide(
+              ctx,
+              slide,
+              paper.width,
+              paper.height,
+              lesson.pptxSources,
+              hidden,
+              signal,
+            ),
+            signal,
+          );
+          page.backgroundPng = await untilAbort(pngBytes(canvas), signal);
+          rasterLayers++;
+        } finally {
+          canvas.width = canvas.height = 0;
         }
       }
       if (options.annotations && ids.length) {

@@ -15,6 +15,7 @@ import {
   verifySources,
 } from "../pdf/sources.ts";
 import { verifyDocumentSources } from "../documents/sources.ts";
+import { hydratePptxSources, verifyPptxSources } from "../pptx/sources.ts";
 export type CommitReceipt = {
   revision: number;
   durableAt: number;
@@ -60,7 +61,7 @@ async function unpack(
     const row = await db.pdfSources.get(id);
     if (row) sources[id] = new Uint8Array(row.bytes);
   }
-  if (value.version === 5) {
+  if (value.version === 5 || value.version === 6) {
     for (const [id, metadata] of Object.entries(value.wordSources ?? {})) {
       const source = await db.documentSources.get(id);
       value.wordSources[id] = {
@@ -69,9 +70,22 @@ async function unpack(
       };
     }
   }
+  if (value.version === 6) {
+    const ids = Object.keys(value.pptxSources ?? {});
+    const stored = await db.documentSources.bulkGet(ids);
+    value.pptxSources = hydratePptxSources(
+      value.pptxSources,
+      Object.fromEntries(
+        stored.flatMap((row) =>
+          row ? [[row.id, new Uint8Array(row.bytes)]] : [],
+        ),
+      ),
+    );
+  }
   const lesson = validateLesson(hydrateSources(value, sources));
   await verifySources(lesson.pdfSources);
   await verifyDocumentSources(lesson.wordSources);
+  await verifyPptxSources(lesson.pptxSources);
   return lesson;
 }
 
@@ -375,6 +389,7 @@ export class LocalWorkspace {
       expected = this.lesson.revision;
     await verifySources(candidate.pdfSources);
     await verifyDocumentSources(candidate.wordSources);
+    await verifyPptxSources(candidate.pptxSources);
     const next = {
         ...candidate,
         id: crypto.randomUUID(),
@@ -416,7 +431,10 @@ export class LocalWorkspace {
               "Stored PDF source is damaged. Current work is unchanged.",
             );
         }
-        for (const source of Object.values(next.wordSources)) {
+        for (const source of [
+          ...Object.values(next.wordSources),
+          ...Object.values(next.pptxSources),
+        ]) {
           const stored = await this.#db.documentSources.get(source.id);
           if (!stored)
             await this.#db.documentSources.add({
@@ -429,7 +447,7 @@ export class LocalWorkspace {
           )
             throw new WorkspaceError(
               "integrity",
-              "Stored Word source is damaged. Current work is unchanged.",
+              "A stored document source is damaged. Current work is unchanged.",
             );
         }
         await this.#db.lessons.add(row);

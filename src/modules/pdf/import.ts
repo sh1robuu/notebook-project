@@ -89,6 +89,9 @@ export function importedLesson(
     }
   return validateLesson({
     ...lesson,
+    ...(mode === "replace"
+      ? { version: 5, pptxDecks: {}, pptxSources: {} }
+      : {}),
     document: { ...lesson.document, store },
     pageId: first,
     pdfSources: Object.fromEntries(
