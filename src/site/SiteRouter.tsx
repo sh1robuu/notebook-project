@@ -4,6 +4,8 @@ import { LandingPage } from "./LandingPage.tsx";
 import { RouteNotice } from "./RouteNotice.tsx";
 import { product } from "../config/product.ts";
 import { editorReleaseState } from "../config/release.ts";
+import { isPublicPath, pageContent } from "./content.ts";
+import { InfoPage } from "./InfoPage.tsx";
 const Editor = lazy(() => import("../app/EditorEntry.tsx"));
 
 export function SiteRouter() {
@@ -16,20 +18,20 @@ export function SiteRouter() {
   });
   useEffect(() => {
     document.documentElement.lang = app ? "en" : "vi";
-    document.title = app
-      ? `${product.name} — Bảng giảng`
-      : path === "/"
-        ? product.title
+    document.title = isPublicPath(path)
+      ? pageContent[path].title
+      : app
+        ? `${product.name} — Bảng giảng`
         : `${product.name} — Không tìm thấy trang`;
-    document
-      .querySelector('meta[name="robots"]')
-      ?.setAttribute(
-        "content",
-        path === "/" ? "index, follow" : "noindex, nofollow, noarchive",
-      );
+    if (!isPublicPath(path))
+      document
+        .querySelector('meta[name="robots"]')
+        ?.setAttribute("content", "noindex, nofollow, noarchive");
   }, [path, app]);
   if (path === "/")
     return <LandingPage editorAvailable={state !== "unavailable"} />;
+  if (isPublicPath(path) && path !== "/")
+    return <InfoPage path={path} available={state !== "unavailable"} />;
   if (!app) return <RouteNotice kind="not-found" />;
   if (state === "unavailable") return <RouteNotice kind="unavailable" />;
   return (

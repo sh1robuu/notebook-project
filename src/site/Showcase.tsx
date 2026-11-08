@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
+import { ProductImage } from "./ProductImage.tsx";
 
 const views = [
   {
@@ -33,6 +34,14 @@ const views = [
     title: "Soạn trước, giảng từng phần",
     text: "Chỉnh nguồn DOCX và công thức OMML được hỗ trợ, rồi biên soạn thành các khối để lần lượt trình bày. Bố cục Word và MathType cũ còn giới hạn.",
     alt: "Bài Word đã biên soạn trên bảng với phân số, căn thức và công thức có thể chỉnh nguồn.",
+  },
+  {
+    id: "slides",
+    label: "PowerPoint · thử nghiệm",
+    image: "pptx",
+    title: "Giải thích theo từng build",
+    text: "Nhập PPTX và trình bày theo thứ tự nguồn trong tập được hỗ trợ. Phông chữ, đối tượng và hiệu ứng còn giới hạn; các cảnh báo xuất hiện khi nhập.",
+    alt: "Slide PowerPoint trong Lessonboard với các nút tiến lùi build và phần chú thích.",
   },
 ] as const;
 
@@ -105,15 +114,7 @@ export function Showcase() {
         className="showcase-panel"
       >
         <figure data-ui>
-          <img
-            key={view.image}
-            src={`/product/${view.image}.webp`}
-            width={1440}
-            height={900}
-            alt={view.alt}
-            loading="lazy"
-            decoding="async"
-          />
+          <ProductImage key={view.image} name={view.image} alt={view.alt} />
         </figure>
         <div className="showcase-caption" aria-live="polite">
           <h3>{view.title}</h3>

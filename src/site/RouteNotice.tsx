@@ -34,6 +34,8 @@ export function RouteNotice({
         <a className="site-button" href="/">
           Về trang giới thiệu
         </a>
+        <a href="/help">Hướng dẫn sử dụng</a>
+        <a href="/privacy">Dữ liệu & quyền riêng tư</a>
         {kind === "not-found" && <a href="/app">Mở bảng giảng</a>}
         {kind === "load-error" && (
           <button onClick={() => location.reload()}>Tải lại</button>

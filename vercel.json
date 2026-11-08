@@ -4,9 +4,10 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "cleanUrls": true,
   "rewrites": [
-    { "source": "/app", "destination": "/index.html" },
-    { "source": "/app/:path*", "destination": "/index.html" }
+    { "source": "/app", "destination": "/editor" },
+    { "source": "/app/:path*", "destination": "/editor" }
   ],
   "headers": [
     {
