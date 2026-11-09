@@ -24,6 +24,7 @@ import {
   MAX_LESSON_MATH_SAMPLES,
   MAX_LESSON_MATH_SOURCE_CHARS,
 } from "../math/descriptor.ts";
+import { MAX_INTERACTIVE_OBJECTS } from "../interactive/model.ts";
 export type DrawingBudget = {
   shapes: number;
   pathChars: number;
@@ -31,6 +32,7 @@ export type DrawingBudget = {
   expandedPoints: number;
   mathSamples?: number;
   mathSourceChars?: number;
+  interactiveObjects?: number;
 };
 /** Internal drawing contract. assetsValidated is only for the already checked shared pool. */
 export function validateDrawing(
@@ -186,6 +188,7 @@ export function validateDrawing(
           "equation",
           "word-block",
           "math-figure",
+          "interactive",
         ].includes(String(record.type))
       )
         throw new WorkspaceError(
@@ -224,6 +227,19 @@ export function validateDrawing(
           throw new WorkspaceError(
             "limit",
             "Math figures exceed the shared lesson source size limit.",
+          );
+      } else if (record.type === "interactive") {
+        finiteBox({ w: record.props.w, h: record.props.h });
+        if (record.props.w < 1 || record.props.h < 1)
+          throw new WorkspaceError(
+            "bounds",
+            "Invalid interactive object dimensions.",
+          );
+        budget.interactiveObjects = (budget.interactiveObjects ?? 0) + 1;
+        if (budget.interactiveObjects > MAX_INTERACTIVE_OBJECTS)
+          throw new WorkspaceError(
+            "limit",
+            "The lesson has too many interactive objects.",
           );
       } else finiteBox(props);
       if (

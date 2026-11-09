@@ -1,0 +1,154 @@
+.prediction-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink, #182127);
+}
+
+.prediction-panel :is(h2, h3, h4, p, ol, ul) {
+  margin: 0;
+}
+.prediction-panel h2 {
+  font-size: 1.25rem;
+}
+.prediction-heading {
+  display: grid;
+  gap: 4px;
+}
+.prediction-context {
+  color: var(--muted, #53616b);
+}
+.prediction-panel button {
+  min-height: 44px;
+  justify-self: start;
+}
+.prediction-panel :is(button, input, textarea):focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+}
+
+.prediction-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 8px 0;
+  border-block: 1px solid var(--edge, #e2e7e8);
+  list-style: none;
+  color: var(--muted, #53616b);
+}
+.prediction-steps [aria-current] {
+  font-weight: 700;
+  color: #075e57;
+}
+.prediction-status,
+.prediction-total {
+  font-weight: 650;
+}
+.prediction-form,
+.prediction-form label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.prediction-form fieldset,
+.prediction-reset {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--edge, #e2e7e8);
+  border-radius: 8px;
+}
+.prediction-panel legend,
+.prediction-form label {
+  font-weight: 600;
+}
+.prediction-form :is(textarea, input) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px;
+  border: 1px solid var(--control, #7d8a90);
+  border-radius: 6px;
+  background: white;
+  color: var(--ink, #182127);
+  font: inherit;
+  font-weight: 400;
+}
+.prediction-form textarea {
+  resize: vertical;
+}
+.prediction-option-editor {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+}
+.prediction-option-editor label {
+  flex: 1;
+}
+.prediction-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.prediction-results {
+  display: grid;
+  gap: 8px;
+}
+.prediction-results ul {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.prediction-results li {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--edge, #e2e7e8);
+  border-radius: 6px;
+}
+.prediction-result-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.prediction-result-line strong {
+  flex: 1 1 100px;
+  min-width: 0;
+}
+.prediction-result-line span {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.prediction-tally-actions {
+  display: flex;
+  gap: 4px;
+}
+.prediction-tally-actions button {
+  min-width: 44px;
+  font-size: 1.2rem;
+}
+.prediction-meter {
+  height: 5px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #e2e7e8;
+}
+.prediction-meter > span {
+  display: block;
+  height: 100%;
+  background: #0f766e;
+}
+.prediction-note {
+  display: grid;
+  gap: 4px;
+}
+.prediction-note p {
+  white-space: pre-wrap;
+}

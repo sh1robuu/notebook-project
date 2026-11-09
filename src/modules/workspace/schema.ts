@@ -2,6 +2,8 @@ import { createTLSchema, defaultShapeSchemas } from "@tldraw/tlschema";
 import { T, Validator } from "@tldraw/validate";
 import { validateMathFigure } from "../math/descriptor.ts";
 import type { MathFigureProps } from "../math/descriptor.ts";
+import { validateInteractiveMaterial } from "../interactive/model.ts";
+import type { InteractiveProps } from "../interactive/model.ts";
 export type EquationProps = {
   w: number;
   h: number;
@@ -20,6 +22,7 @@ declare module "@tldraw/tlschema" {
     equation: EquationProps;
     "word-block": WordBlockProps;
     "math-figure": MathFigureProps;
+    interactive: InteractiveProps;
   }
 }
 export const equationProps = {
@@ -40,11 +43,17 @@ export const mathFigureProps = {
   h: T.number,
   figure: new Validator(validateMathFigure),
 };
+export const interactiveProps = {
+  w: T.number,
+  h: T.number,
+  material: new Validator(validateInteractiveMaterial),
+};
 export const lessonSchema = createTLSchema({
   shapes: {
     ...defaultShapeSchemas,
     equation: { props: equationProps },
     "word-block": { props: wordBlockProps },
     "math-figure": { props: mathFigureProps },
+    interactive: { props: interactiveProps },
   },
 });

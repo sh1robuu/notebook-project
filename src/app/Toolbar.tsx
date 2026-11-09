@@ -3,6 +3,7 @@ import type { BoardEngine, BoardTool } from "../modules/board/engine.ts";
 import { Icon } from "./Icon.tsx";
 import { ObjectProperties } from "./ObjectProperties.tsx";
 import { MathTools } from "./math/MathTools.tsx";
+import { InteractiveTools } from "./interactive/InteractiveTools.tsx";
 const tools = [
   ["draw", "pen", "Pen", "P"],
   ["highlight", "highlight", "Highlighter", "Shift+P"],
@@ -112,6 +113,11 @@ export function Toolbar({ engine }: { engine: BoardEngine }) {
         engine={engine}
         request={editing.mathPanel}
         readOnly={state.readOnly}
+      />
+      <InteractiveTools
+        key={engine.surface + ":" + engine.editorEpoch}
+        engine={engine}
+        canInsert={!state.readOnly}
       />
       <input
         hidden

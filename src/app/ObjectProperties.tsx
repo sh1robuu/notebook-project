@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from "react";
 import type { BoardEngine } from "../modules/board/engine.ts";
 import type { TLDefaultFontStyle, TLDefaultFillStyle } from "tldraw";
+import { requestInteractive } from "../modules/interactive/InteractiveShape.tsx";
 export function ObjectProperties({ engine }: { engine: BoardEngine }) {
   const c = engine.editing,
     state = useSyncExternalStore(c.subscribe, c.getSnapshot),
@@ -177,6 +178,14 @@ export function ObjectProperties({ engine }: { engine: BoardEngine }) {
       ) : null}
       {single?.type === "math-figure" ? (
         <button onClick={() => c.editMathFigure()}>Edit math figure</button>
+      ) : null}
+      {single?.type === "interactive" ? (
+        <button
+          type="button"
+          onClick={() => requestInteractive(engine.pages.editor, single.id)}
+        >
+          Mở mô phỏng
+        </button>
       ) : null}
       {single?.type === "equation" ? (
         <button onClick={() => c.editEquation()} aria-label="Edit equation">

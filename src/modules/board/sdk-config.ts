@@ -2,11 +2,13 @@ import { GeoShapeUtil, getTipTapDefaultExtensions } from "tldraw";
 import { EquationShapeUtil } from "./EquationShape.tsx";
 import { WordBlockShapeUtil } from "../documents/WordBlockShape.tsx";
 import { MathFigureShapeUtil } from "../math/MathFigureShape.tsx";
+import { InteractiveShapeUtil } from "../interactive/InteractiveShape.tsx";
 import { MAX_SHAPES, MAX_PAGES } from "../workspace/model.ts";
 export const shapeUtils = [
   EquationShapeUtil,
   WordBlockShapeUtil,
   MathFigureShapeUtil,
+  InteractiveShapeUtil,
   GeoShapeUtil.configure({
     getCustomDisplayValues(_editor, shape) {
       return typeof shape.meta.fillColor === "string" &&

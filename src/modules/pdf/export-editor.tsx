@@ -7,11 +7,14 @@ import { WordSourcesContext } from "../documents/render.tsx";
 import type { DocumentSources } from "../documents/sources.ts";
 import { bindWordSources } from "../documents/editor-sources.ts";
 import { getEditorLicenseKey } from "../../config/release.ts";
+import { bindInteractiveSources } from "../interactive/InteractiveShape.tsx";
+import type { InteractiveSources } from "../interactive/sources.ts";
 /** A detached native store, never a live editor or a second authored object model. */
 export async function exportEditor(
   document: TLStoreSnapshot,
   signal: AbortSignal,
   sources: DocumentSources = {},
+  interactiveSources: InteractiveSources = {},
 ): Promise<{ editor: Editor; close: () => void }> {
   checkAbort(signal);
   const host = window.document.createElement("div");
@@ -28,9 +31,11 @@ export async function exportEditor(
   window.document.body.append(host);
   const root = createRoot(host);
   let releaseSources = () => {};
+  let releaseInteractives = () => {};
   const close = () => {
     root.unmount();
     releaseSources();
+    releaseInteractives();
     host.remove();
   };
   return new Promise((resolve, reject) => {
@@ -57,6 +62,10 @@ export async function exportEditor(
             try {
               checkAbort(signal);
               releaseSources = bindWordSources(editor, () => sources);
+              releaseInteractives = bindInteractiveSources(
+                editor,
+                () => interactiveSources,
+              );
               loadSnapshot(editor.store, { document });
               editor.updateInstanceState({ isReadonly: true });
               resolve({ editor, close });

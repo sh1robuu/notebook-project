@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useValue } from "tldraw";
 import type { BoardEngine } from "../modules/board/engine.ts";
 import type { ExportOptions } from "../modules/pdf/export.ts";
+import { InteractiveExportWarning } from "../modules/pdf/export-contract.ts";
 import { checkAbort } from "../modules/pdf/runtime.ts";
 import { validatePaper } from "../modules/workspace/lesson-view.ts";
 import { playbackKey } from "./pptx/SlideCanvas.tsx";
@@ -29,7 +30,8 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [progress, setProgress] = useState(""),
-    [currentBuild, setCurrentBuild] = useState(false);
+    [currentBuild, setCurrentBuild] = useState(false),
+    [missingPreviews, setMissingPreviews] = useState<readonly string[]>([]);
   const dialog = useRef<HTMLDialogElement>(null),
     abort = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -43,7 +45,7 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
     setOpen(false);
     setProgress("");
   }
-  async function prepare() {
+  async function prepare(allowInteractivePlaceholders = false) {
     if (busy) return;
     const job = new AbortController();
     abort.current = job;
@@ -80,12 +82,13 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
       checkAbort(job.signal);
       const result = await createExport(
         snapshot,
-        { ...options, selected, slideFrame },
+        { ...options, selected, slideFrame, allowInteractivePlaceholders },
         passwords,
         job.signal,
         setProgress,
       );
       checkAbort(job.signal);
+      setMissingPreviews([]);
       const blob = new Blob([new Uint8Array(result.bytes).buffer], {
           type: result.mime,
         }),
@@ -108,6 +111,11 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
       }
     } catch (e) {
       if (!job.signal.aborted) {
+        if (e instanceof InteractiveExportWarning) {
+          setMissingPreviews(e.titles);
+          setProgress("");
+          return;
+        }
         setError(
           e instanceof Error ? e.message : "Export could not be prepared.",
         );
@@ -121,6 +129,7 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
     setOptions((old) => ({ ...old, ...value }));
     setError("");
     setProgress("");
+    setMissingPreviews([]);
   }
   return (
     <>
@@ -129,6 +138,7 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
           setOpen(true);
           setError("");
           setProgress("");
+          setMissingPreviews([]);
         }}
       >
         Export
@@ -304,11 +314,27 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
           <p>
             Original PDF text stays searchable where supported. Added text,
             equations and some graphics are exported as images. Some annotated
-            PDF pages are also flattened to images. Forms, links and scripts
-            are not included, and scanned text is not made searchable.
+            PDF pages are also flattened to images. Forms, links and scripts are
+            not included, and scanned text is not made searchable.
           </p>
         ) : null}
         {progress ? <p role="status">{progress}</p> : null}
+        {missingPreviews.length ? (
+          <div role="alert">
+            <p>
+              Chưa có ảnh tĩnh cho {missingPreviews.length} mô phỏng. Bạn có thể
+              xuất với thẻ tên, hoặc quay lại để thêm ảnh minh họa.
+            </p>
+            <ul>
+              {missingPreviews.slice(0, 8).map((title, index) => (
+                <li key={index}>{title}</li>
+              ))}
+              {missingPreviews.length > 8 ? (
+                <li>Và {missingPreviews.length - 8} mô phỏng khác</li>
+              ) : null}
+            </ul>
+          </div>
+        ) : null}
         {error ? (
           <p className="dialog-error" role="alert">
             {error}
@@ -319,9 +345,13 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
           <button
             className="primary"
             disabled={busy}
-            onClick={() => void prepare()}
+            onClick={() => void prepare(missingPreviews.length > 0)}
           >
-            {busy ? "Preparing…" : "Prepare export"}
+            {busy
+              ? "Preparing…"
+              : missingPreviews.length
+                ? "Xuất với thẻ tên"
+                : "Prepare export"}
           </button>
         </div>
       </dialog>

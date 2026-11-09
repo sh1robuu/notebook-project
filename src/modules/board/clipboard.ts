@@ -57,6 +57,10 @@ export class ClipboardController {
     const e = this.#editor,
       content = e.getContentFromCurrentPage(e.getSelectedShapeIds());
     if (!content?.shapes.length) return null;
+    if (content.shapes.some((shape) => shape.type === "interactive"))
+      throw new Error(
+        "Use Duplicate or a lesson archive to keep interactive source files with their objects.",
+      );
     if (content.shapes.some((shape) => shape.type === "word-block"))
       throw new Error(
         "Use Word Terminal to copy or edit structured teaching content. Original documents are not put on the object clipboard.",

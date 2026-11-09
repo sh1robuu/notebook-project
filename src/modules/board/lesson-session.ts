@@ -21,6 +21,12 @@ import {
   MAX_LESSON_MATH_SOURCE_CHARS,
 } from "../math/descriptor.ts";
 import type { MathFigure } from "../math/descriptor.ts";
+import { MAX_INTERACTIVE_OBJECTS } from "../interactive/model.ts";
+import { validateInteractiveSources } from "../interactive/sources.ts";
+import type {
+  InteractiveSource,
+  InteractiveSources,
+} from "../interactive/sources.ts";
 import { validateDocument } from "../documents/model.ts";
 import type { DocumentModel } from "../documents/model.ts";
 import { verifyDocumentSources } from "../documents/sources.ts";
@@ -52,6 +58,7 @@ type SaveValue = Pick<
   | "title"
   | "wordDraft"
   | "wordSources"
+  | "interactiveSources"
 >;
 /** One persistence lifetime for two authoritative native drawing stores. */
 export class LessonSession {
@@ -71,11 +78,13 @@ export class LessonSession {
   #retired = new Set<string>();
   #wordDraft: DocumentModel | null;
   wordSources: DocumentSources;
+  interactiveSources: InteractiveSources;
   state: SessionState;
   constructor(workspace: LocalWorkspace) {
     this.workspace = workspace;
     this.#wordDraft = workspace.lesson.wordDraft;
     this.wordSources = workspace.lesson.wordSources;
+    this.interactiveSources = workspace.lesson.interactiveSources ?? {};
     this.#view = structuredClone(workspace.lesson.view);
     this.state = {
       title: workspace.lesson.title,
@@ -248,6 +257,7 @@ export class LessonSession {
   #withinMathCapacity() {
     let samples = 0;
     let chars = 0;
+    let interactiveCount = 0;
     const check = (figure: MathFigure) => {
       samples += mathFigureSampleCount(figure);
       chars += mathFigureSourceSize(figure);
@@ -259,6 +269,9 @@ export class LessonSession {
     for (const surface of ["main", "scratchpad"] as const) {
       const editor = this.engines.get(surface)?.pages.editor;
       if (editor) {
+        interactiveCount += editor.store.query
+          .ids("shape", () => ({ type: { eq: "interactive" } }))
+          .get().size;
         const ids = editor.store.query
           .ids("shape", () => ({ type: { eq: "math-figure" } }))
           .get();
@@ -272,6 +285,8 @@ export class LessonSession {
         const snapshot =
           surface === "main" ? lesson.document : lesson.scratchpad.document;
         for (const record of Object.values(snapshot.store)) {
+          if (record.typeName === "shape" && record.type === "interactive")
+            interactiveCount++;
           if (
             record.typeName === "shape" &&
             record.type === "math-figure" &&
@@ -281,7 +296,41 @@ export class LessonSession {
         }
       }
     }
-    return true;
+    return interactiveCount <= MAX_INTERACTIVE_OBJECTS;
+  }
+  withInteractiveSources(
+    incoming: readonly InteractiveSource[],
+    edit: () => boolean,
+  ) {
+    const previous = this.interactiveSources;
+    const next = { ...previous };
+    for (const source of incoming) {
+      const existing = next[source.id];
+      if (existing && existing.kind !== source.kind)
+        throw new Error(
+          "The same source bytes already use a different interactive format.",
+        );
+      next[source.id] = existing ?? source;
+    }
+    validateInteractiveSources(next);
+    const lesson = this.workspace.lesson;
+    if (
+      [
+        ...Object.values(lesson.pdfSources),
+        ...Object.values(this.wordSources),
+        ...Object.values(lesson.pptxSources),
+        ...Object.values(next),
+      ].reduce((sum, source) => sum + source.size, 0) > 250_000_000
+    )
+      throw new Error("Lesson sources exceed 250 MB.");
+    this.interactiveSources = next;
+    let committed = false;
+    try {
+      committed = edit();
+      return committed;
+    } finally {
+      if (!committed) this.interactiveSources = previous;
+    }
   }
   remainingShapes() {
     return (
@@ -437,10 +486,15 @@ export class LessonSession {
       view,
       wordDraft: this.#wordDraft,
       wordSources: this.wordSources,
+      interactiveSources: this.interactiveSources,
     };
   }
   getLesson(): Lesson {
-    return validateLesson({ ...this.workspace.lesson, ...this.#capture() });
+    return validateLesson({
+      ...this.workspace.lesson,
+      ...this.#capture(),
+      ...(Object.keys(this.interactiveSources).length ? { version: 6 } : {}),
+    });
   }
   setPresentation(presentation: boolean) {
     if (this.state.presentation === presentation) return;
@@ -484,6 +538,7 @@ export class LessonSession {
     try {
       this.#wordDraft = lesson.wordDraft;
       this.wordSources = lesson.wordSources;
+      this.interactiveSources = lesson.interactiveSources ?? {};
       this.#view = structuredClone(lesson.view);
       this.#retired.clear();
       this.pdf.close();

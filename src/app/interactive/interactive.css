@@ -1,0 +1,160 @@
+.interactive-dialog {
+  width: min(880px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: clamp(14px, 3vw, 26px);
+}
+
+.interactive-dialog[data-expanded="true"] {
+  width: calc(100vw - 20px);
+  max-width: none;
+  max-height: calc(100dvh - 20px);
+  min-height: calc(100dvh - 20px);
+}
+
+.interactive-dialog[data-docked="true"] {
+  position: fixed;
+  inset: 12px 12px 12px auto;
+  margin: auto 0;
+  width: min(460px, calc(100vw - 24px));
+  z-index: 50;
+}
+
+.interactive-heading,
+.interactive-footer,
+.interactive-mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.interactive-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+  border-bottom: 1px solid var(--edge);
+  padding-bottom: 12px;
+}
+
+.interactive-heading h2 {
+  margin: 0;
+}
+
+.interactive-panel {
+  padding-top: 14px;
+  overflow-wrap: anywhere;
+}
+
+.interactive-actions,
+.interactive-file-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.interactive-file-inputs label,
+.interactive-footer label,
+.interactive-poster {
+  display: grid;
+  flex: 1 1 180px;
+  gap: 4px;
+  min-width: 0;
+}
+
+.interactive-footer,
+.interactive-poster {
+  border-top: 1px solid var(--edge);
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.interactive-footer {
+  align-items: end;
+}
+
+.interactive-panel input {
+  max-width: 100%;
+}
+
+.interactive-tag {
+  background: #e4f3ef;
+  color: #1d554b;
+  font-size: 0.875rem;
+  border-radius: 5px;
+  padding: 4px 8px;
+}
+
+.interactive-mode {
+  justify-content: flex-start;
+  margin-bottom: 12px;
+}
+
+.interactive-summary {
+  display: grid;
+  grid-template-columns: minmax(88px, 0.35fr) minmax(0, 1fr);
+  gap: 7px 14px;
+  padding: 12px;
+  margin-block: 14px;
+  background: #f5f8f7;
+  border-radius: 8px;
+}
+
+.interactive-summary dt {
+  color: var(--muted);
+}
+
+.interactive-summary dd {
+  margin: 0;
+}
+
+.interactive-inventory {
+  max-height: 160px;
+  overflow: auto;
+  padding-inline-start: 24px;
+}
+
+.interactive-html {
+  margin-block: 14px;
+}
+
+.interactive-static-frame {
+  display: block;
+  width: 100%;
+  height: clamp(180px, 42dvh, 560px);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.interactive-dialog[data-expanded="true"] .interactive-static-frame {
+  height: clamp(220px, 62dvh, 900px);
+}
+
+.interactive-slider {
+  background: #f5f8f7;
+  border-radius: 8px;
+  border: 1px solid var(--edge);
+  margin-top: 10px;
+  padding: 12px;
+}
+
+.interactive-slider label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.interactive-slider input,
+.interactive-slider progress {
+  width: 100%;
+  accent-color: #1d665a;
+}
+
+.interactive-slider progress {
+  margin-bottom: 8px;
+}

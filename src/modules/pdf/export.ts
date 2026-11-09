@@ -9,6 +9,7 @@ import { checkAbort, abortError, PdfRuntime, pdfTask } from "./runtime.ts";
 import { parsePageRange, rasterSize } from "./geometry.ts";
 import { normalizedPath } from "./paths.ts";
 import { paintSlide, slideForPaper } from "../pptx/render.ts";
+import { InteractiveExportWarning } from "./export-contract.ts";
 import type {
   ExportBounds,
   ExportPage,
@@ -16,6 +17,7 @@ import type {
   ExportLayer,
 } from "./export-contract.ts";
 export type ExportOptions = {
+  allowInteractivePlaceholders?: boolean;
   format: "png" | "pdf";
   scope: "current" | "all" | "range" | "scratchpad" | "selection" | "region";
   range: string;
@@ -220,11 +222,13 @@ async function createExportJob(
         hydrateSurface(lesson, "main"),
         signal,
         lesson.wordSources,
+        lesson.interactiveSources,
       )).editor;
     return (scratch ??= await exportEditor(
       hydrateSurface(lesson, "scratchpad"),
       signal,
       lesson.wordSources,
+      lesson.interactiveSources,
     )).editor;
   }
   async function annotationsImage(
@@ -287,6 +291,35 @@ async function createExportJob(
       });
     const output: ExportPage[] = [];
     const usedSources: PdfExportJob["sources"] = {};
+    if (options.annotations && !options.allowInteractivePlaceholders) {
+      const missing: string[] = [];
+      for (const request of requests) {
+        const editor = await editorFor(request.surface);
+        const ids =
+          options.scope === "selection"
+            ? editor.getShapeAndDescendantIds(options.selected)
+            : editor.getPageShapeIds(request.id);
+        for (const id of ids) {
+          const shape = editor.getShape(id);
+          if (shape?.type !== "interactive" || shape.props.material.snapshotId)
+            continue;
+          if (options.scope === "region") {
+            const bounds = editor.getShapePageBounds(shape);
+            const region = options.region;
+            if (
+              !bounds ||
+              bounds.maxX < region.x ||
+              bounds.maxY < region.y ||
+              bounds.x > region.x + region.w ||
+              bounds.y > region.y + region.h
+            )
+              continue;
+          }
+          missing.push(shape.props.material.title);
+        }
+      }
+      if (missing.length) throw new InteractiveExportWarning(missing);
+    }
     for (let n = 0; n < requests.length; n++) {
       checkAbort(signal);
       progress(

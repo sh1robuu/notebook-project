@@ -16,6 +16,10 @@ import {
 } from "../pdf/sources.ts";
 import { verifyDocumentSources } from "../documents/sources.ts";
 import { hydratePptxSources, verifyPptxSources } from "../pptx/sources.ts";
+import {
+  hydrateInteractiveSources,
+  verifyInteractiveSources,
+} from "../interactive/sources.ts";
 export type CommitReceipt = {
   revision: number;
   durableAt: number;
@@ -81,11 +85,23 @@ async function unpack(
         ),
       ),
     );
+    const interactive = await db.documentSources.bulkGet(
+      Object.keys(value.interactiveSources ?? {}),
+    );
+    value.interactiveSources = hydrateInteractiveSources(
+      value.interactiveSources,
+      Object.fromEntries(
+        interactive.flatMap((row) =>
+          row ? [[row.id, new Uint8Array(row.bytes)]] : [],
+        ),
+      ),
+    );
   }
   const lesson = validateLesson(hydrateSources(value, sources));
   await verifySources(lesson.pdfSources);
   await verifyDocumentSources(lesson.wordSources);
   await verifyPptxSources(lesson.pptxSources);
+  await verifyInteractiveSources(lesson.interactiveSources ?? {});
   return lesson;
 }
 
@@ -292,7 +308,12 @@ export class LocalWorkspace {
     value: { document: TLStoreSnapshot; title: string } & Partial<
       Pick<
         Lesson,
-        "scratchpad" | "view" | "pageId" | "wordDraft" | "wordSources"
+        | "scratchpad"
+        | "view"
+        | "pageId"
+        | "wordDraft"
+        | "wordSources"
+        | "interactiveSources"
       >
     >,
     expectedRevision: number,
@@ -302,6 +323,9 @@ export class LocalWorkspace {
     const lesson = validateLesson({
         ...this.lesson,
         ...value,
+        version: Object.keys(value.interactiveSources ?? {}).length
+          ? 6
+          : this.lesson.version,
         revision: expectedRevision + 1,
         updatedAt: new Date().toISOString(),
       }),
@@ -314,13 +338,24 @@ export class LocalWorkspace {
         JSON.stringify(lesson.wordDraft) ===
           JSON.stringify(this.lesson.wordDraft) &&
         JSON.stringify(Object.keys(lesson.wordSources).sort()) ===
-          JSON.stringify(Object.keys(this.lesson.wordSources).sort());
+          JSON.stringify(Object.keys(this.lesson.wordSources).sort()) &&
+        JSON.stringify(Object.keys(lesson.interactiveSources ?? {}).sort()) ===
+          JSON.stringify(
+            Object.keys(this.lesson.interactiveSources ?? {}).sort(),
+          );
     const newSources = Object.fromEntries(
       Object.entries(lesson.wordSources).filter(
         ([key, source]) => this.lesson.wordSources[key]?.bytes !== source.bytes,
       ),
     );
     await verifyDocumentSources(newSources);
+    const newInteractives = Object.fromEntries(
+      Object.entries(lesson.interactiveSources ?? {}).filter(
+        ([key, source]) =>
+          this.lesson.interactiveSources?.[key]?.bytes !== source.bytes,
+      ),
+    );
+    await verifyInteractiveSources(newInteractives);
     if (authoredUnchanged) lesson.revision = expectedRevision;
     const row = await pack(lesson);
     // Compare canonical validated values, rather than relying on mutable caller
@@ -348,7 +383,10 @@ export class LocalWorkspace {
             "A newer lesson revision exists. Download this tab’s work before reopening.",
           );
         if (unchanged) return;
-        for (const source of Object.values(newSources)) {
+        for (const source of [
+          ...Object.values(newSources),
+          ...Object.values(newInteractives),
+        ]) {
           const previous = await this.#db.documentSources.get(source.id);
           if (!previous)
             await this.#db.documentSources.add({
@@ -361,7 +399,7 @@ export class LocalWorkspace {
           )
             throw new WorkspaceError(
               "integrity",
-              "Stored Word source is damaged. Current work is unchanged.",
+              "A stored document source is damaged. Current work is unchanged.",
             );
         }
         if (!authoredUnchanged)
@@ -390,6 +428,7 @@ export class LocalWorkspace {
     await verifySources(candidate.pdfSources);
     await verifyDocumentSources(candidate.wordSources);
     await verifyPptxSources(candidate.pptxSources);
+    await verifyInteractiveSources(candidate.interactiveSources ?? {});
     const next = {
         ...candidate,
         id: crypto.randomUUID(),
@@ -434,6 +473,7 @@ export class LocalWorkspace {
         for (const source of [
           ...Object.values(next.wordSources),
           ...Object.values(next.pptxSources),
+          ...Object.values(next.interactiveSources ?? {}),
         ]) {
           const stored = await this.#db.documentSources.get(source.id);
           if (!stored)

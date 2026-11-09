@@ -17,6 +17,12 @@ import {
 import { verifyDocumentSources } from "../documents/sources.ts";
 import { hydratePptxSources, verifyPptxSources } from "../pptx/sources.ts";
 import { verifyMathFigures } from "../math/integrity.ts";
+import {
+  hydrateInteractiveSources,
+  referencedInteractiveSources,
+  verifyInteractiveSources,
+} from "../interactive/sources.ts";
+import { verifyInteractiveMaterials } from "../interactive/archive-validation.ts";
 const encoder = new TextEncoder(),
   decoder = new TextDecoder("utf-8", { fatal: true });
 const MAX_MANIFEST_BYTES = 512_000;
@@ -27,11 +33,17 @@ const browserRealm = () =>
   (typeof self !== "undefined" && "importScripts" in self);
 
 export async function encodeArchive(input: Lesson): Promise<Uint8Array> {
-  const lesson = validateLesson(input),
-    payload = encoder.encode(JSON.stringify(serializedLesson(lesson)));
+  const lesson = validateLesson(input);
+  lesson.interactiveSources = referencedInteractiveSources(
+    [lesson.document, lesson.scratchpad.document],
+    lesson.interactiveSources ?? {},
+  );
+  const hasInteractives = Object.keys(lesson.interactiveSources).length > 0;
+  const payload = encoder.encode(JSON.stringify(serializedLesson(lesson)));
   await verifySources(lesson.pdfSources);
   await verifyDocumentSources(lesson.wordSources);
   await verifyPptxSources(lesson.pptxSources);
+  await verifyInteractiveSources(lesson.interactiveSources);
   const entries: Record<string, Uint8Array> = { "lesson.json": payload };
   for (const source of Object.values(lesson.pdfSources))
     entries["sources/" + source.sha256 + ".pdf"] = source.bytes;
@@ -43,6 +55,8 @@ export async function encodeArchive(input: Lesson): Promise<Uint8Array> {
       : `pptx-images/${source.sha256}.bin`;
     entries[name] = source.bytes;
   }
+  for (const source of Object.values(lesson.interactiveSources))
+    entries[`interactive/${source.sha256}.bin`] = source.bytes;
   if (
     Object.values(entries).reduce((n, b) => n + b.length, 0) +
       MAX_MANIFEST_BYTES >
@@ -55,7 +69,7 @@ export async function encodeArchive(input: Lesson): Promise<Uint8Array> {
   const manifest = encoder.encode(
     JSON.stringify({
       format: "teachboard",
-      version: lesson.version === 6 ? 4 : 3,
+      version: hasInteractives ? 5 : lesson.version === 6 ? 4 : 3,
       files: Object.fromEntries(
         await Promise.all(
           Object.entries(entries).map(async ([name, bytes]) => [
@@ -90,7 +104,8 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
             !/^sources\/[a-f0-9]{64}\.pdf$/.test(file.name) &&
             !/^word\/[a-f0-9]{64}\.bin$/.test(file.name) &&
             !/^pptx\/[a-f0-9]{64}\.pptx$/.test(file.name) &&
-            !/^pptx-images\/[a-f0-9]{64}\.bin$/.test(file.name)) ||
+            !/^pptx-images\/[a-f0-9]{64}\.bin$/.test(file.name) &&
+            !/^interactive\/[a-f0-9]{64}\.bin$/.test(file.name)) ||
           seen.has(file.name)
         )
           throw new WorkspaceError(
@@ -137,7 +152,7 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
   if (
     !object(manifest) ||
     manifest.format !== "teachboard" ||
-    ![1, 2, 3, 4].includes(manifest.version as number)
+    ![1, 2, 3, 4, 5].includes(manifest.version as number)
   )
     throw new WorkspaceError(
       "version",
@@ -192,6 +207,11 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
       return [];
     }),
   );
+  const interactiveBytes = Object.fromEntries(
+    Object.entries(files)
+      .filter(([name]) => name.startsWith("interactive/"))
+      .map(([name, data]) => [name.slice(0, -4).replace("/", ":"), data]),
+  );
   if (
     object(lesson) &&
     (lesson.version === 5 || lesson.version === 6) &&
@@ -211,6 +231,10 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
     lesson = {
       ...lesson,
       pptxSources: hydratePptxSources(lesson.pptxSources, pptxBytes),
+      interactiveSources: hydrateInteractiveSources(
+        lesson.interactiveSources,
+        interactiveBytes,
+      ),
     };
   const validated = validateLesson(hydrateSources(lesson, sourceBytes));
   verifyMathFigures(
@@ -235,7 +259,7 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
     throw new WorkspaceError("integrity", "Unexpected Word source in archive.");
   await verifyDocumentSources(validated.wordSources);
   if (
-    (manifest.version === 4) !== (validated.version === 6) ||
+    Number(manifest.version) >= 4 !== (validated.version === 6) ||
     Object.keys(validated.pptxSources).length !== Object.keys(pptxBytes).length
   )
     throw new WorkspaceError(
@@ -243,9 +267,36 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
       "Unexpected PowerPoint sources or version in archive.",
     );
   await verifyPptxSources(validated.pptxSources);
+  const interactiveSources = validated.interactiveSources ?? {};
+  const sourceCount = Object.keys(interactiveSources).length;
+  if (
+    (manifest.version === 5) !== sourceCount > 0 ||
+    sourceCount !== Object.keys(interactiveBytes).length ||
+    sourceCount !==
+      Object.keys(
+        referencedInteractiveSources(
+          [validated.document, validated.scratchpad.document],
+          interactiveSources,
+        ),
+      ).length
+  )
+    throw new WorkspaceError(
+      "integrity",
+      "Unexpected interactive sources or version in archive.",
+    );
+  await verifyInteractiveSources(interactiveSources);
+  verifyInteractiveMaterials(
+    [validated.document, validated.scratchpad.document],
+    interactiveSources,
+  );
   for (const source of [
     ...Object.values(validated.wordSources),
     ...Object.values(validated.pptxSources),
+    ...Object.values(interactiveSources).flatMap((source) =>
+      source.kind === "preview"
+        ? [{ ...source, mime: readImageHeader(source.bytes).mime }]
+        : [],
+    ),
   ]) {
     if (!["image/png", "image/jpeg"].includes(source.mime)) continue;
     if (typeof createImageBitmap === "undefined") {

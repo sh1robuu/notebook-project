@@ -30,6 +30,7 @@ import { installTextCaret } from "./text-caret.ts";
 import { bindCapacity } from "./capacity.ts";
 import { bindWordSources } from "../documents/editor-sources.ts";
 import { paintSlide, slideForPaper } from "../pptx/render.ts";
+import { bindInteractiveSources } from "../interactive/InteractiveShape.tsx";
 export type BoardTool =
   | "draw"
   | "highlight"
@@ -101,6 +102,9 @@ export class BoardEngine {
     this.editorEpoch = session.state.editorEpoch;
     this.#editor = editor;
     this.#dispose.push(bindWordSources(editor, () => session.wordSources));
+    this.#dispose.push(
+      bindInteractiveSources(editor, () => session.interactiveSources),
+    );
     loadSnapshot(editor.store, { document: session.document(surface) });
     editor.setCurrentPage(
       (surface === "main"
@@ -423,7 +427,11 @@ export class BoardEngine {
   getClipboardLesson(): Lesson {
     const document = this.captureDocument(),
       pageId = this.currentPageId(),
-      ids = this.#editor.getCurrentPageShapeIds();
+      ids = new Set(
+        [...this.#editor.getCurrentPageShapeIds()].filter(
+          (id) => this.#editor.getShape(id)?.type !== "interactive",
+        ),
+      );
     const store = Object.fromEntries(
       Object.entries(document.store).filter(
         ([id, r]) =>
@@ -433,6 +441,7 @@ export class BoardEngine {
           (r.typeName === "page" && id === pageId) ||
           (r.typeName === "shape" &&
             r.type !== "word-block" &&
+            r.type !== "interactive" &&
             ids.has(r.id)) ||
           (r.typeName === "binding" && ids.has(r.fromId) && ids.has(r.toId)),
       ),
@@ -521,6 +530,9 @@ export class BoardEngine {
     this.session.armExtension(false);
     this.#guard.cancel();
     if (this.editing.state.mathPanel) this.editing.closeMath();
+    this.#editor
+      .getContainer()
+      .dispatchEvent(new Event("lessonboard:interactive-cancel"));
     if (this.#editor.getEditingShapeId()) this.editing.textDone();
   }
   startLaser() {

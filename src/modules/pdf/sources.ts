@@ -121,9 +121,18 @@ export async function verifySources(input: unknown): Promise<PdfSources> {
 }
 /** Metadata only: original bytes live in immutable IDB rows / separate ZIP entries. */
 export function serializedLesson(lesson: Lesson) {
-  const { pptxDecks, pptxSources, ...base } = lesson;
+  const { pptxDecks, pptxSources, interactiveSources, ...base } = lesson;
   return {
     ...base,
+    ...(interactiveSources && Object.keys(interactiveSources).length
+      ? {
+          interactiveSources: Object.fromEntries(
+            Object.entries(interactiveSources).map(
+              ([id, { bytes: _, ...meta }]) => [id, meta],
+            ),
+          ),
+        }
+      : {}),
     ...(lesson.version === 6
       ? {
           pptxDecks,

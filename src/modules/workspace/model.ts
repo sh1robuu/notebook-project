@@ -17,6 +17,11 @@ import { readImageHeader } from "../media/image-format.ts";
 import { validatePptxDecks, validatePptxSources } from "../pptx/sources.ts";
 import type { PptxDecks } from "../pptx/sources.ts";
 import type { PptxSources } from "../pptx/model.ts";
+import {
+  referencedInteractiveSources,
+  validateInteractiveSources,
+} from "../interactive/sources.ts";
+import type { InteractiveSources } from "../interactive/sources.ts";
 export {
   SDK_VERSION,
   MAX_ARCHIVE_BYTES,
@@ -44,6 +49,7 @@ export type Lesson = {
   wordDraft: DocumentModel | null;
   pptxDecks: PptxDecks;
   pptxSources: PptxSources;
+  interactiveSources?: InteractiveSources;
 };
 export function blankDrawing(pageId = "page:page"): TLStoreSnapshot {
   const d = DocumentRecordType.create({
@@ -193,6 +199,18 @@ export function validateLesson(value: unknown): Lesson {
     );
   const pptxSources = validatePptxSources(value.pptxSources);
   const pptxDecks = validatePptxDecks(value.pptxDecks, pptxSources);
+  const interactiveSources = validateInteractiveSources(
+    value.interactiveSources,
+  );
+  referencedInteractiveSources(
+    [main.document, scratch.document],
+    interactiveSources,
+  );
+  if (value.version !== 6 && Object.keys(interactiveSources).length)
+    throw new WorkspaceError(
+      "version",
+      "A legacy lesson contains newer interactive materials.",
+    );
   let imageBytes = 0,
     imagePixels = 0,
     imageCount = 0;
@@ -223,6 +241,7 @@ export function validateLesson(value: unknown): Lesson {
       ...Object.values(pdfSources),
       ...Object.values(wordSources),
       ...Object.values(pptxSources),
+      ...Object.values(interactiveSources),
     ].reduce((sum, source) => sum + source.size, 0) > 250_000_000
   )
     throw new WorkspaceError(
@@ -398,6 +417,7 @@ export function validateLesson(value: unknown): Lesson {
     wordDraft,
     pptxDecks,
     pptxSources,
+    interactiveSources,
   } as Lesson;
 }
 export function hydrateSurface(

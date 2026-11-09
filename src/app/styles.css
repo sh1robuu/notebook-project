@@ -1083,6 +1083,10 @@ dialog .dialog-title {
 .math-tools {
   margin: 8px 0;
 }
+.interactive-launch {
+  text-align: left;
+  flex-shrink: 0;
+}
 .math-tools summary {
   cursor: pointer;
   padding: 7px 8px;

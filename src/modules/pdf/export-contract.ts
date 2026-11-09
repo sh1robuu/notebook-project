@@ -1,5 +1,11 @@
 import type { PdfSource } from "./sources.ts";
 export type ExportBounds = { x: number; y: number; w: number; h: number };
+export class InteractiveExportWarning extends Error {
+  constructor(readonly titles: readonly string[]) {
+    super("Some interactive objects have no image for this export.");
+    this.name = "InteractiveExportWarning";
+  }
+}
 export type ExportLayer = {
   bounds: ExportBounds;
   svg?: string;
