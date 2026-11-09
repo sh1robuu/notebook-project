@@ -3,18 +3,35 @@ import type { ReactNode } from "react";
 import { LocalWorkspace } from "../modules/workspace/local-workspace.ts";
 import { BoardScreen } from "./BoardScreen.tsx";
 import { product } from "../config/product.ts";
+import type { Lesson } from "../modules/workspace/model.ts";
+import { installActivityGuards } from "../modules/workspace/activity.ts";
+import { offlineWorkspace } from "../modules/pwa/client.ts";
+import { WorkspaceRecovery } from "./workspace/WorkspaceRecovery.tsx";
+import { lessonAddress } from "./workspace/WorkspaceTools.tsx";
 type Boot = { workspace?: LocalWorkspace; error?: string };
+type BootRequest = { id?: string; create?: true; candidate?: Lesson };
 export function App() {
-  const [boot, setBoot] = useState<Boot>({}),
-    [attempt, setAttempt] = useState(0);
+  const [boot, setBoot] = useState<Boot>({});
+  const [request, setRequest] = useState<BootRequest>(() => ({
+    id: new URLSearchParams(location.search).get("lesson") ?? undefined,
+  }));
+  useEffect(() => offlineWorkspace.start(), []);
+  useEffect(installActivityGuards, []);
   useEffect(() => {
     let closed = false,
       opened: LocalWorkspace | undefined;
-    LocalWorkspace.open()
+    const opening = request.create
+      ? LocalWorkspace.startNew(undefined, request.candidate)
+      : LocalWorkspace.open(undefined, request.id);
+    void opening
       .then((workspace) => {
         opened = workspace;
         if (closed) workspace.close();
-        else setBoot({ workspace });
+        else {
+          if (request.create || request.id)
+            history.replaceState(null, "", lessonAddress(workspace.lesson.id));
+          setBoot({ workspace });
+        }
       })
       .catch((error) => {
         if (!closed)
@@ -29,10 +46,31 @@ export function App() {
       closed = true;
       opened?.close();
     };
-  }, [attempt]);
+  }, [request]);
+  function open(next: BootRequest) {
+    setBoot({});
+    setRequest(next);
+  }
+  const recovery = (error: string) => (
+    <WorkspaceRecovery
+      error={error}
+      retry={() =>
+        open({
+          id: new URLSearchParams(location.search).get("lesson") ?? undefined,
+        })
+      }
+      select={(id) => open({ id })}
+      create={(candidate) => open({ create: true, candidate })}
+    />
+  );
   if (boot.workspace)
     return (
-      <EditorBoundary>
+      <EditorBoundary
+        key={boot.workspace.lesson.id}
+        fallback={recovery(
+          "Không mở được bảng. Hãy thử mở lại bản lưu hoặc chọn một bài khác.",
+        )}
+      >
         <BoardScreen workspace={boot.workspace} />
       </EditorBoundary>
     );
@@ -41,19 +79,7 @@ export function App() {
       <img src="/mark.svg" width="48" height="48" alt="" />
       <h1>{product.name}</h1>
       {boot.error ? (
-        <>
-          <h2>Unable to open local lessons</h2>
-          <p role="alert">{boot.error}</p>
-          <p>Existing saved data has been kept.</p>
-          <button
-            onClick={() => {
-              setBoot({});
-              setAttempt((n) => n + 1);
-            }}
-          >
-            Retry opening workspace
-          </button>
-        </>
+        recovery(boot.error)
       ) : (
         <p role="status">Opening your teaching workspace…</p>
       )}
@@ -61,7 +87,7 @@ export function App() {
   );
 }
 class EditorBoundary extends Component<
-  { children: ReactNode },
+  { children: ReactNode; fallback: ReactNode },
   { failed: boolean }
 > {
   state = { failed: false };
@@ -71,14 +97,8 @@ class EditorBoundary extends Component<
   render() {
     return this.state.failed ? (
       <main className="boot-screen">
-        <h1>The editor could not open</h1>
-        <p>
-          Your saved local data has been kept. Reload to reopen the last saved
-          lesson.
-        </p>
-        <button onClick={() => window.location.reload()}>
-          Reload workspace
-        </button>
+        <h1>{product.name}</h1>
+        {this.props.fallback}
       </main>
     ) : (
       this.props.children

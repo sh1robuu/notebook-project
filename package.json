@@ -7,10 +7,10 @@
     "node": "24.x"
   },
   "scripts": {
-    "predev": "node scripts/pdf-assets.mjs",
-    "prebuild": "node scripts/pdf-assets.mjs",
+    "predev": "node scripts/pdf-assets.mjs && node scripts/editor-assets.mjs",
+    "prebuild": "node scripts/pdf-assets.mjs && node scripts/editor-assets.mjs",
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
-    "build": "tsc --noEmit && vite build && node scripts/prerender.mjs",
+    "build": "tsc --noEmit && vite build && node scripts/prerender.mjs && node scripts/pwa-build.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
     "typecheck": "tsc --noEmit"
   },
@@ -30,11 +30,15 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "svg-pathdata": "9.0.0",
-    "tldraw": "5.6.0"
+    "tldraw": "5.6.0",
+    "workbox-core": "7.4.1",
+    "workbox-precaching": "7.4.1",
+    "workbox-routing": "7.4.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.64.1",
+    "@tldraw/assets": "5.6.0",
     "@tldraw/utils": "5.6.0",
     "@types/katex": "0.16.8",
     "@types/node": "26.6.6",

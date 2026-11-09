@@ -2,6 +2,7 @@
 import { createServer, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { product } from "../src/config/product.ts";
 import {
   editorReleaseState,
@@ -49,7 +50,8 @@ function siteOrigin(value) {
 }
 try {
   const { renderSite } = await server.ssrLoadModule("/src/site/prerender.tsx");
-  const template = await readFile("dist/index.html", "utf8");
+  const output = process.argv[2] ?? "dist";
+  const template = await readFile(join(output, "index.html"), "utf8");
   const origin = siteOrigin(env.VITE_SITE_URL || product.siteUrl);
   for (const path of [...publicPaths, "/app", "/404"]) {
     const isPublic = publicPaths.includes(path);
@@ -114,16 +116,16 @@ try {
       );
     const file =
       path === "/" ? "index" : path === "/app" ? "editor" : path.slice(1);
-    await writeFile("dist/" + file + ".html", html);
+    await writeFile(join(output, file + ".html"), html);
   }
   await writeFile(
-    "dist/robots.txt",
+    join(output, "robots.txt"),
     "User-agent: *\nAllow: /\nDisallow: /app\n" +
       (origin && !preview ? "\nSitemap: " + origin + "/sitemap.xml\n" : ""),
   );
   if (origin)
     await writeFile(
-      "dist/sitemap.xml",
+      join(output, "sitemap.xml"),
       '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
         publicPaths
           .map(

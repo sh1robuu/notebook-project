@@ -4,6 +4,7 @@ import type { BoardEngine } from "./engine.ts";
 import { MAX_PAGES, validateLesson } from "../workspace/model.ts";
 import { defaultPaper, validatePaper } from "../workspace/lesson-view.ts";
 import type { Paper } from "../workspace/lesson-view.ts";
+import { devicePreferences } from "../workspace/preferences.ts";
 export const paperColors = {
   white: "#ffffff",
   dark: "#20272d",
@@ -40,7 +41,10 @@ export class PageController {
     const id = PageRecordType.createId();
     this.editor.markHistoryStoppingPoint("Add page");
     this.editor.run(() => {
-      this.editor.createPage({ id, meta: { paper: defaultPaper() } });
+      this.editor.createPage({ id, meta: { paper: {
+        ...defaultPaper(),
+        color: devicePreferences.getSnapshot().value.paperColor,
+      } } });
       this.editor.setCurrentPage(id);
     });
   }

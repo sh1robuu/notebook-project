@@ -12,6 +12,7 @@ import type { PptxImportResult } from "../../modules/pptx/model.ts";
 import { missingSlideFonts } from "../../modules/pptx/render.ts";
 import { SlideCanvas } from "./SlideCanvas.tsx";
 import { SlideWarnings } from "./SlideControls.tsx";
+import { beginOperation } from "../../modules/workspace/activity.ts";
 
 const isPptx = (file: File) =>
   file.type === PPTX_MIME || /\.pptx$/i.test(file.name);
@@ -49,6 +50,7 @@ export function PptxImport({ engine }: { engine: BoardEngine }) {
         session.state.presentation
       )
         return;
+      const finish = beginOperation("Kiểm tra PowerPoint");
       job.current?.abort();
       const next = new AbortController();
       job.current = next;
@@ -78,6 +80,7 @@ export function PptxImport({ engine }: { engine: BoardEngine }) {
           setProgress("");
         }
       } finally {
+        finish();
         if (job.current === next) {
           job.current = null;
           setBusy(false);
@@ -140,6 +143,7 @@ export function PptxImport({ engine }: { engine: BoardEngine }) {
   }
   async function confirm() {
     if (!candidate || commitInFlight.current) return;
+    const finish = beginOperation("Lưu trang chiếu");
     commitInFlight.current = true;
     setSaving(true);
     setError("");
@@ -171,6 +175,7 @@ export function PptxImport({ engine }: { engine: BoardEngine }) {
         e instanceof Error ? e.message : "The slides could not be saved.",
       );
     } finally {
+      finish();
       commitInFlight.current = false;
       setSaving(false);
     }

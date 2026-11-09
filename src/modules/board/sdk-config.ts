@@ -1,9 +1,12 @@
 import { GeoShapeUtil, getTipTapDefaultExtensions } from "tldraw";
+import { getAssetUrls } from "@tldraw/assets/selfHosted.js";
 import { EquationShapeUtil } from "./EquationShape.tsx";
 import { WordBlockShapeUtil } from "../documents/WordBlockShape.tsx";
 import { MathFigureShapeUtil } from "../math/MathFigureShape.tsx";
 import { InteractiveShapeUtil } from "../interactive/InteractiveShape.tsx";
 import { MAX_SHAPES, MAX_PAGES } from "../workspace/model.ts";
+const { fonts, icons, embedIcons } = getAssetUrls({ baseUrl: "/tldraw" });
+export const sdkAssetUrls = { fonts, icons, embedIcons };
 export const shapeUtils = [
   EquationShapeUtil,
   WordBlockShapeUtil,

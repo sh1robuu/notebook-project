@@ -10,6 +10,7 @@ import { dataImage } from "../../modules/media/image-format.ts";
 import { insertInteractive } from "../../modules/interactive/board.ts";
 import { makeInteractiveSource } from "../../modules/interactive/sources.ts";
 import { HtmlSimulation } from "./HtmlSimulation.tsx";
+import { beginOperation } from "../../modules/workspace/activity.ts";
 
 type Intake =
   | { kind: "html"; result: InspectedHtmlBundle }
@@ -48,6 +49,7 @@ export function InsertInteractive({
     );
   }
   async function analyze() {
+    const finish = beginOperation("Kiểm tra mô phỏng");
     const job = new AbortController();
     active.current?.abort();
     active.current = job;
@@ -74,11 +76,13 @@ export function InsertInteractive({
             : "Không đọc được gói mô phỏng.",
         );
     } finally {
+      finish();
       if (active.current === job && !job.signal.aborted) setBusy(false);
     }
   }
   async function insert() {
     if (!intake || busy || !title.trim()) return;
+    const finish = beginOperation("Chèn mô phỏng");
     const job = new AbortController();
     active.current = job;
     setBusy(true);
@@ -130,6 +134,7 @@ export function InsertInteractive({
             : "Không chèn được mô phỏng.",
         );
     } finally {
+      finish();
       if (!job.signal.aborted) setBusy(false);
     }
   }

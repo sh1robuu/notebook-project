@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { BoardEngine } from "../../modules/board/engine.ts";
+import { beginOperation } from "../../modules/workspace/activity.ts";
 import { changeInteractive } from "../../modules/interactive/board.ts";
 import type { InteractiveShape } from "../../modules/interactive/InteractiveShape.tsx";
 import type {
@@ -97,6 +98,7 @@ export function MaterialPanel({
     }
   }
   async function attachPoster(file: File) {
+    const finish = beginOperation("Thêm ảnh minh họa");
     const job = new AbortController();
     posterJob.current?.abort();
     posterJob.current = job;
@@ -139,6 +141,7 @@ export function MaterialPanel({
             : "Không đọc được ảnh minh họa.",
         );
     } finally {
+      finish();
       if (!job.signal.aborted) setPosterBusy(false);
     }
   }

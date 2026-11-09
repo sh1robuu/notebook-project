@@ -158,6 +158,16 @@ export class CommandRegistry {
       .filter((v): v is Command => !!v)
       .map((c) => ({ id: c.id, label: c.label, enabled: c.enabled() }));
   }
+  shortcuts() {
+    return [...this.#commands.values()]
+      .filter((command) => command.keys?.length)
+      .map((command) => ({
+        id: command.id,
+        label: command.label,
+        keys: [...command.keys!],
+        enabled: command.enabled(),
+      }));
+  }
   install() {
     const abort = new AbortController(),
       opts = { capture: true, signal: abort.signal };

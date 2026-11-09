@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { Tldraw, loadSnapshot } from "tldraw";
 import type { Editor, TLStoreSnapshot } from "tldraw";
-import { shapeUtils, textOptions, sdkOptions } from "../board/sdk-config.ts";
+import { shapeUtils, textOptions, sdkOptions, sdkAssetUrls } from "../board/sdk-config.ts";
 import { abortError, checkAbort } from "./runtime.ts";
 import { WordSourcesContext } from "../documents/render.tsx";
 import type { DocumentSources } from "../documents/sources.ts";
@@ -53,6 +53,7 @@ export async function exportEditor(
           shapeUtils={shapeUtils}
           textOptions={textOptions}
           options={sdkOptions}
+          assetUrls={sdkAssetUrls}
           licenseKey={getEditorLicenseKey(
             import.meta.env.VITE_TLDRAW_LICENSE_KEY,
           )}

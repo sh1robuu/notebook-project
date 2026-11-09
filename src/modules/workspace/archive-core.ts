@@ -1,4 +1,7 @@
-import { zipSync, unzipSync } from "fflate";
+import { zipSync } from "fflate";
+import { BoundedZipError, readBoundedZip } from "../media/bounded-zip.ts";
+import { APP_VERSION, ARCHIVE_MAX_VERSION } from "../../config/version.ts";
+import { product } from "../../config/product.ts";
 import {
   digest,
   MAX_ARCHIVE_BYTES,
@@ -26,6 +29,21 @@ import { verifyInteractiveMaterials } from "../interactive/archive-validation.ts
 const encoder = new TextEncoder(),
   decoder = new TextDecoder("utf-8", { fatal: true });
 const MAX_MANIFEST_BYTES = 512_000;
+const MAX_ARCHIVE_ENTRIES = 2048;
+const MAX_COMPRESSION_RATIO = 1100;
+export type ArchiveInfo = {
+  formatVersion: number;
+  applicationVersion: string | null;
+  createdAt: string | null;
+  sourceLessonId: string;
+  mainPages: number;
+  mainObjects: number;
+  scratchpadObjects: number;
+  sourceCount: number;
+  sourceBytes: number;
+  warnings: string[];
+};
+export type ArchiveCandidate = { lesson: Lesson; info: ArchiveInfo };
 // PDF.js's Node worker installs self=globalThis. Require an actual window or
 // worker capability before enforcing browser-only decoded-pixel validation.
 const browserRealm = () =>
@@ -57,37 +75,57 @@ export async function encodeArchive(input: Lesson): Promise<Uint8Array> {
   }
   for (const source of Object.values(lesson.interactiveSources))
     entries[`interactive/${source.sha256}.bin`] = source.bytes;
+  const expandedBytes = Object.values(entries).reduce(
+    (n, b) => n + b.length,
+    0,
+  );
   if (
-    Object.values(entries).reduce((n, b) => n + b.length, 0) +
-      MAX_MANIFEST_BYTES >
-    MAX_ARCHIVE_BYTES
+    Object.keys(entries).length + 1 > MAX_ARCHIVE_ENTRIES ||
+    expandedBytes > MAX_ARCHIVE_BYTES
   )
     throw new WorkspaceError(
       "limit",
       "The lesson exceeds the 250 MB archive limit.",
     );
+  const checksums: Record<string, { bytes: number; sha256: string }> = {};
+  for (const [name, bytes] of Object.entries(entries))
+    checksums[name] = { bytes: bytes.length, sha256: await digest(bytes) };
   const manifest = encoder.encode(
     JSON.stringify({
       format: "teachboard",
       version: hasInteractives ? 5 : lesson.version === 6 ? 4 : 3,
-      files: Object.fromEntries(
-        await Promise.all(
-          Object.entries(entries).map(async ([name, bytes]) => [
-            name,
-            { bytes: bytes.length, sha256: await digest(bytes) },
-          ]),
-        ),
-      ),
+      application: product.name,
+      applicationVersion: APP_VERSION,
+      sdkVersion: lesson.sdkVersion,
+      sourceLessonId: lesson.id,
+      createdAt: new Date().toISOString(),
+      files: checksums,
     }),
   );
-  return new Uint8Array(
-    zipSync(
-      { "manifest.json": manifest, ...entries },
-      { level: 1, mtime: new Date(1980, 0, 1) },
-    ),
+  if (manifest.length > MAX_MANIFEST_BYTES)
+    throw new WorkspaceError(
+      "limit",
+      "The archive manifest exceeds its size limit.",
+    );
+  if (expandedBytes + manifest.length > MAX_ARCHIVE_BYTES)
+    throw new WorkspaceError(
+      "limit",
+      "The lesson exceeds the 250 MB archive limit.",
+    );
+  const archive = zipSync(
+    { "manifest.json": manifest, ...entries },
+    { level: 1, mtime: new Date(1980, 0, 1) },
   );
+  if (archive.length > MAX_ARCHIVE_BYTES)
+    throw new WorkspaceError(
+      "limit",
+      "The archive exceeds the 250 MB file limit.",
+    );
+  return archive;
 }
-export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
+export async function inspectArchive(
+  bytes: Uint8Array,
+): Promise<ArchiveCandidate> {
   if (bytes.length > MAX_ARCHIVE_BYTES)
     throw new WorkspaceError(
       "limit",
@@ -95,41 +133,44 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
     );
   let files: Record<string, Uint8Array>;
   const seen = new Set<string>();
-  let total = 0;
   try {
-    files = unzipSync(bytes, {
-      filter(file) {
+    const unpacked = readBoundedZip(bytes, {
+      label: "Lesson archive",
+      maxPackageBytes: MAX_ARCHIVE_BYTES,
+      maxExpandedBytes: MAX_ARCHIVE_BYTES,
+      maxEntries: MAX_ARCHIVE_ENTRIES,
+      maxPartBytes: MAX_ARCHIVE_BYTES,
+      maxCompressionRatio: MAX_COMPRESSION_RATIO,
+      validateEntry(file) {
         if (
-          (!["manifest.json", "lesson.json"].includes(file.name) &&
-            !/^sources\/[a-f0-9]{64}\.pdf$/.test(file.name) &&
-            !/^word\/[a-f0-9]{64}\.bin$/.test(file.name) &&
-            !/^pptx\/[a-f0-9]{64}\.pptx$/.test(file.name) &&
-            !/^pptx-images\/[a-f0-9]{64}\.bin$/.test(file.name) &&
-            !/^interactive\/[a-f0-9]{64}\.bin$/.test(file.name)) ||
-          seen.has(file.name)
+          file.folder ||
+          (!["manifest.json", "lesson.json"].includes(file.path) &&
+            !/^sources\/[a-f0-9]{64}\.pdf$/.test(file.path) &&
+            !/^word\/[a-f0-9]{64}\.bin$/.test(file.path) &&
+            !/^pptx\/[a-f0-9]{64}\.pptx$/.test(file.path) &&
+            !/^pptx-images\/[a-f0-9]{64}\.bin$/.test(file.path) &&
+            !/^interactive\/[a-f0-9]{64}\.bin$/.test(file.path))
         )
           throw new WorkspaceError(
             "entry",
             "Unexpected, duplicate or unsafe archive entry.",
           );
-        seen.add(file.name);
-        total += file.originalSize;
+        seen.add(file.path);
         if (
-          !Number.isSafeInteger(file.originalSize) ||
-          file.originalSize < 0 ||
-          total > MAX_ARCHIVE_BYTES ||
-          (file.name === "manifest.json" &&
-            file.originalSize > MAX_MANIFEST_BYTES)
+          file.path === "manifest.json" &&
+          file.expandedBytes > MAX_MANIFEST_BYTES
         )
           throw new WorkspaceError(
             "limit",
             "Archive entry size exceeds the allowed limit.",
           );
-        return true;
       },
     });
+    files = Object.fromEntries(unpacked.files);
   } catch (error) {
     if (error instanceof WorkspaceError) throw error;
+    if (error instanceof BoundedZipError)
+      throw new WorkspaceError(error.code, error.message);
     throw new WorkspaceError(
       "archive",
       "This is not a readable lesson ZIP archive.",
@@ -152,11 +193,31 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
   if (
     !object(manifest) ||
     manifest.format !== "teachboard" ||
-    ![1, 2, 3, 4, 5].includes(manifest.version as number)
+    typeof manifest.version !== "number" ||
+    !Number.isInteger(manifest.version) ||
+    manifest.version < 1 ||
+    manifest.version > ARCHIVE_MAX_VERSION
   )
     throw new WorkspaceError(
       "version",
       "Unsupported lesson archive format or version.",
+    );
+  if (
+    (manifest.application !== undefined &&
+      manifest.application !== product.name) ||
+    (manifest.applicationVersion !== undefined &&
+      (typeof manifest.applicationVersion !== "string" ||
+        !/^\d+\.\d+\.\d+(?:[-+][a-zA-Z0-9.-]+)?$/.test(
+          manifest.applicationVersion,
+        ) ||
+        manifest.applicationVersion.length > 80)) ||
+    (manifest.createdAt !== undefined &&
+      (typeof manifest.createdAt !== "string" ||
+        !Number.isFinite(Date.parse(manifest.createdAt))))
+  )
+    throw new WorkspaceError(
+      "version",
+      "Invalid archive application metadata.",
     );
   if (
     !object(manifest.files) ||
@@ -169,7 +230,7 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
     );
   for (const [name, entry] of Object.entries(manifest.files))
     if (
-      !files[name] ||
+      !Object.hasOwn(files, name) ||
       name === "manifest.json" ||
       !object(entry) ||
       entry.bytes !== files[name].length ||
@@ -237,6 +298,16 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
       ),
     };
   const validated = validateLesson(hydrateSources(lesson, sourceBytes));
+  if (
+    (manifest.sourceLessonId !== undefined &&
+      manifest.sourceLessonId !== validated.id) ||
+    (manifest.sdkVersion !== undefined &&
+      manifest.sdkVersion !== validated.sdkVersion)
+  )
+    throw new WorkspaceError(
+      "integrity",
+      "Archive compatibility metadata differs from its lesson.",
+    );
   verifyMathFigures(
     [validated.document, validated.scratchpad.document].flatMap((document) =>
       Object.values(document.store).flatMap((record) =>
@@ -363,5 +434,73 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
       );
     }
   }
-  return validated;
+  const mainRecords = Object.values(validated.document.store);
+  const scratchRecords = Object.values(validated.scratchpad.document.store);
+  const sources = [
+    ...Object.values(validated.pdfSources),
+    ...Object.values(validated.wordSources),
+    ...Object.values(validated.pptxSources),
+    ...Object.values(validated.interactiveSources ?? {}),
+  ];
+  const warnings: string[] = [];
+  if (!manifest.applicationVersion)
+    warnings.push(
+      "Tệp cũ chưa ghi phiên bản ứng dụng. Dữ liệu đã được kiểm tra bằng định dạng hiện tại.",
+    );
+  else if (manifest.applicationVersion !== APP_VERSION)
+    warnings.push(
+      "Tệp được tạo bằng phiên bản ứng dụng khác. Chỉ nội dung tương thích đã kiểm tra mới được mở.",
+    );
+  const materials = [...mainRecords, ...scratchRecords].filter(
+    (record) => record.typeName === "shape" && record.type === "interactive",
+  );
+  if (
+    materials.some(
+      (record) =>
+        record.typeName === "shape" &&
+        record.type === "interactive" &&
+        record.props.material.kind === "geogebra",
+    )
+  )
+    warnings.push(
+      "GeoGebra giữ tệp GGB gốc. Chạy bản nhúng và khôi phục thao tác GeoGebra chưa được hỗ trợ.",
+    );
+  if (
+    materials.some(
+      (record) =>
+        record.typeName === "shape" &&
+        record.type === "interactive" &&
+        record.props.material.kind === "html",
+    )
+  )
+    warnings.push(
+      "Mô phỏng HTML mở theo phạm vi hỗ trợ của ứng dụng. Mã JavaScript trong tệp được giữ lại nhưng không chạy.",
+    );
+  return {
+    lesson: validated,
+    info: {
+      formatVersion: Number(manifest.version),
+      applicationVersion:
+        typeof manifest.applicationVersion === "string"
+          ? manifest.applicationVersion
+          : null,
+      createdAt:
+        typeof manifest.createdAt === "string" ? manifest.createdAt : null,
+      sourceLessonId: validated.id,
+      mainPages: mainRecords.filter((record) => record.typeName === "page")
+        .length,
+      mainObjects: mainRecords.filter((record) => record.typeName === "shape")
+        .length,
+      scratchpadObjects: scratchRecords.filter(
+        (record) => record.typeName === "shape",
+      ).length,
+      sourceCount: sources.length,
+      sourceBytes: sources.reduce((total, source) => total + source.size, 0),
+      warnings,
+    },
+  };
+}
+
+export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
+  return (await inspectArchive(bytes)).lesson;
 }

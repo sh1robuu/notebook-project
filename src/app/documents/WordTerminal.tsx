@@ -18,6 +18,7 @@ import {
   deleteBlock,
 } from "../../modules/documents/terminal-model.ts";
 import { compileDocument } from "../../modules/documents/layout.ts";
+import { beginOperation } from "../../modules/workspace/activity.ts";
 import { getWordTeaching } from "../../modules/documents/teaching.ts";
 import { BlockEditor } from "./BlockEditor.tsx";
 import { WordPreview } from "./WordPreview.tsx";
@@ -156,6 +157,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
     engine.pages.editor.focus();
   }
   async function normalize(input: ClipboardInput = { text: sourceText }) {
+    const finish = beginOperation("Đọc nội dung Word");
     job.current?.abort();
     const task = new AbortController();
     job.current = task;
@@ -186,6 +188,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
             : "Could not read the pasted content.",
         );
     } finally {
+      finish();
       if (job.current === task) {
         job.current = null;
         setBusy(false);
@@ -193,6 +196,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
     }
   }
   async function choose(file: File) {
+    const finish = beginOperation("Kiểm tra DOCX");
     job.current?.abort();
     const task = new AbortController();
     job.current = task;
@@ -219,6 +223,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
         );
       }
     } finally {
+      finish();
       if (job.current === task) {
         job.current = null;
         setBusy(false);
@@ -244,6 +249,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       );
       return false;
     }
+    const finish = beginOperation("Lưu bản nháp Word");
     setBusy(true);
     setError("");
     const scope = session.scope();
@@ -259,6 +265,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       );
       return false;
     } finally {
+      finish();
       setBusy(false);
     }
   }
@@ -274,6 +281,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       );
       return;
     }
+    const finish = beginOperation("Đưa tài liệu Word lên bảng");
     const task = new AbortController();
     job.current = task;
     const scope = session.scope();
@@ -352,6 +360,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
             " Your previous teaching page was kept.",
         );
     } finally {
+      finish();
       if (job.current === task) {
         job.current = null;
         setBusy(false);

@@ -3,6 +3,7 @@ import type { BoardEngine } from "../modules/board/engine.ts";
 import type { PdfSource } from "../modules/pdf/sources.ts";
 import { inspectPdf, abortError } from "../modules/pdf/runtime.ts";
 import { importedLesson } from "../modules/pdf/import.ts";
+import { beginOperation } from "../modules/workspace/activity.ts";
 export function PdfImport({ engine }: { engine: BoardEngine }) {
   const session = engine.session,
     ui = useSyncExternalStore(session.subscribe, session.getSnapshot);
@@ -45,6 +46,7 @@ export function PdfImport({ engine }: { engine: BoardEngine }) {
     setBusy(false);
   }
   async function choose(file: File) {
+    const finish = beginOperation("Kiểm tra PDF");
     setFileLabel(file.name + " · " + file.size.toLocaleString() + " bytes");
     abort.current?.abort();
     const job = new AbortController();
@@ -87,6 +89,7 @@ export function PdfImport({ engine }: { engine: BoardEngine }) {
           e instanceof Error ? e.message : "The PDF could not be imported.",
         );
     } finally {
+      finish();
       if (abort.current === job) {
         setBusy(false);
         setPasswordPrompt(false);
@@ -98,6 +101,7 @@ export function PdfImport({ engine }: { engine: BoardEngine }) {
   }
   async function commit(mode: "append" | "replace") {
     if (!candidate || committing) return;
+    const finish = beginOperation("Lưu PDF vào bài giảng");
     setCommitting(true);
     setError("");
     try {
@@ -125,6 +129,7 @@ export function PdfImport({ engine }: { engine: BoardEngine }) {
         `${e instanceof Error ? e.message : "PDF import failed."} The previous lesson and scratchpad have been kept.`,
       );
     } finally {
+      finish();
       setCommitting(false);
     }
   }

@@ -1,5 +1,6 @@
 export type SaveStatus = {
   phase: "saved" | "saving" | "error";
+  pending?: boolean;
   error?: string;
   savedAt?: number;
 };
@@ -8,6 +9,7 @@ type Options<T> = {
   write: (value: T) => Promise<unknown>;
   canSave: () => boolean;
   delayMs?: number;
+  initialSavedAt?: number;
 };
 
 /** Serializes durable acknowledgements; edits during a write stay dirty. */
@@ -22,6 +24,7 @@ export class SaveCoordinator<T> {
   status: SaveStatus = { phase: "saved" };
   constructor(options: Options<T>) {
     this.#options = options;
+    this.status = { phase: "saved", savedAt: options.initialSavedAt };
   }
   subscribe = (listener: () => void) => {
     this.#listeners.add(listener);
@@ -34,7 +37,9 @@ export class SaveCoordinator<T> {
     if (this.#closed) return;
     if (
       this.status.phase === status.phase &&
-      this.status.error === status.error
+      this.status.pending === status.pending &&
+      this.status.error === status.error &&
+      this.status.savedAt === status.savedAt
     )
       return;
     this.status = status;
@@ -44,7 +49,12 @@ export class SaveCoordinator<T> {
     if (this.#closed) return;
     this.#dirty = true;
     this.#version++;
-    this.#set({ phase: "saving" });
+    this.#set({
+      phase: "saving",
+      pending: !this.#inflight,
+      savedAt: this.status.savedAt,
+      error: this.status.error,
+    });
     this.#schedule();
   }
   #schedule() {
@@ -62,7 +72,11 @@ export class SaveCoordinator<T> {
       this.#schedule();
       return;
     }
-    this.#set({ phase: "saving" });
+    this.#set({
+      phase: "saving",
+      savedAt: this.status.savedAt,
+      error: this.status.error,
+    });
     const drain = async () => {
       while (this.#dirty && !this.#closed) {
         if (!this.#options.canSave()) {
@@ -71,10 +85,20 @@ export class SaveCoordinator<T> {
         }
         const version = this.#version,
           value = this.#options.read();
-        await this.#options.write(value);
+        const receipt = await this.#options.write(value);
+        const savedAt =
+          receipt &&
+          typeof receipt === "object" &&
+          "durableAt" in receipt &&
+          typeof receipt.durableAt === "number" &&
+          Number.isFinite(receipt.durableAt)
+            ? receipt.durableAt
+            : Date.now();
         if (version === this.#version) {
           this.#dirty = false;
-          this.#set({ phase: "saved", savedAt: Date.now() });
+          this.#set({ phase: "saved", savedAt });
+        } else if (this.#dirty) {
+          this.#set({ phase: "saving", savedAt });
         }
       }
     };
@@ -83,6 +107,7 @@ export class SaveCoordinator<T> {
         this.#set({
           phase: "error",
           error: error instanceof Error ? error.message : "Saving failed.",
+          savedAt: this.status.savedAt,
         });
         throw error;
       })
@@ -91,11 +116,11 @@ export class SaveCoordinator<T> {
       });
     return this.#inflight;
   }
-  reset() {
+  reset(savedAt = this.status.savedAt) {
     clearTimeout(this.#timer);
     this.#version++;
     this.#dirty = false;
-    this.#set({ phase: "saved", savedAt: Date.now() });
+    this.#set({ phase: "saved", savedAt });
   }
   close() {
     this.#closed = true;

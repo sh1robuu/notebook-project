@@ -19,6 +19,7 @@ import { dataImage, MAX_TOTAL_IMAGE_BYTES } from "../media/image-format.ts";
 import { prepareImage } from "../media/images.ts";
 import { checkAssetBudget } from "../media/asset-budget.ts";
 import { canCreateShapes } from "./capacity.ts";
+import { beginOperation } from "../workspace/activity.ts";
 const appAttribute = "data-lessonboard-content";
 function base64(text: string) {
   const bytes = new TextEncoder().encode(text),
@@ -101,6 +102,7 @@ export class ClipboardController {
     return this.#copying;
   }
   async #writeCopy(cut: boolean, previous: Promise<void>): Promise<void> {
+    const finish = beginOperation(cut ? "Cắt đối tượng" : "Sao chép đối tượng");
     try {
       const lesson = this.#selectionLesson();
       if (!lesson) return;
@@ -166,12 +168,15 @@ export class ClipboardController {
       this.#editing.notify(
         `${cut ? "Cut cancelled. " : ""}${error instanceof Error ? error.message : "Clipboard permission denied."} Original work is kept. ${this.#fallback ? "Paste within this tab remains available." : ""}`,
       );
+    } finally {
+      finish();
     }
   }
   async paste(): Promise<void> {
+    const finish = beginOperation("Đọc bộ nhớ tạm");
     const scope = this.#scope();
-    await this.#copying;
     try {
+      await this.#copying;
       if (!navigator.clipboard?.read)
         throw new Error("Clipboard read is unavailable.");
       const items = await navigator.clipboard.read();
@@ -211,6 +216,8 @@ export class ClipboardController {
         this.#editing.notify(
           "Clipboard permission denied or unavailable. Use browser Paste / Ctrl+V, or choose a local image.",
         );
+    } finally {
+      finish();
     }
   }
   install(host: HTMLElement) {
@@ -296,6 +303,7 @@ export class ClipboardController {
     rtf?: string;
   }): Promise<boolean> {
     if (this.#editor.getIsReadonly()) return false;
+    const finish = beginOperation("Dán nội dung");
     const scope = this.#scope(),
       rte = input.inText ? this.#editor.getRichTextEditor() : null;
     const caret = rte
@@ -575,6 +583,8 @@ export class ClipboardController {
           : "Paste failed. Original work was kept.",
       );
       return false;
+    } finally {
+      finish();
     }
   }
 }

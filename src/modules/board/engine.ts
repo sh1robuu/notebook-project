@@ -31,6 +31,9 @@ import { bindCapacity } from "./capacity.ts";
 import { bindWordSources } from "../documents/editor-sources.ts";
 import { paintSlide, slideForPaper } from "../pptx/render.ts";
 import { bindInteractiveSources } from "../interactive/InteractiveShape.tsx";
+import { devicePreferences } from "../workspace/preferences.ts";
+import type { WorkspacePreferences } from "../workspace/preferences.ts";
+import { activityState } from "../workspace/activity.ts";
 export type BoardTool =
   | "draw"
   | "highlight"
@@ -100,6 +103,9 @@ export class BoardEngine {
     this.session = session;
     this.surface = surface;
     this.editorEpoch = session.state.editorEpoch;
+    const preferences = devicePreferences.getSnapshot().value;
+    this.#ink = { color: preferences.penColor, size: preferences.penSize };
+    this.#highlighter = { color: preferences.highlighterColor, size: preferences.highlighterSize };
     this.#editor = editor;
     this.#dispose.push(bindWordSources(editor, () => session.wordSources));
     this.#dispose.push(
@@ -124,9 +130,9 @@ export class BoardEngine {
     editor.setCurrentTool(workspace.readOnly ? "hand" : "draw");
     this.state = {
       tool: workspace.readOnly ? "hand" : "draw",
-      color: "black",
-      size: "m",
-      touchMode: "pan",
+      color: preferences.penColor,
+      size: preferences.penSize,
+      touchMode: preferences.touchMode,
       count: 0,
       canUndo: false,
       canRedo: false,
@@ -301,6 +307,7 @@ export class BoardEngine {
       }),
     );
     this.#applyStyle();
+    this.#guard.setTouchMode(preferences.touchMode);
   }
   subscribe = (fn: () => void) => {
     this.#listeners.add(fn);
@@ -362,6 +369,14 @@ export class BoardEngine {
     this.#guard.setTouchMode(touchMode);
     this.#publish({ ...this.state, touchMode });
   }
+  applyDevicePreferences(preferences: WorkspacePreferences) {
+    if (this.isPointing()) return false;
+    this.#ink = { color: preferences.penColor, size: preferences.penSize };
+    this.#highlighter = { color: preferences.highlighterColor, size: preferences.highlighterSize };
+    this.setTouchMode(preferences.touchMode);
+    this.#applyStyle();
+    return true;
+  }
   setTitle(title: string) {
     this.session.setTitle(title);
   }
@@ -375,6 +390,7 @@ export class BoardEngine {
   syncReadOnly() {
     this.#editor.updateInstanceState({
       isReadonly:
+        activityState.getSnapshot().navigationLocked ||
         this.session.workspace.readOnly ||
         this.session.state.presentation ||
         (this.surface === "main" && this.session.state.reading),

@@ -32,6 +32,7 @@ import {
   shapeUtils,
   textOptions,
   sdkOptions,
+  sdkAssetUrls,
 } from "../modules/board/sdk-config.ts";
 import { ExportDialog } from "./ExportDialog.tsx";
 import { WordTerminal } from "./documents/WordTerminal.tsx";
@@ -40,6 +41,9 @@ import { WordSourcesContext } from "../modules/documents/render.tsx";
 import { wordVisibility } from "../modules/documents/teaching.ts";
 import { PptxImport } from "./pptx/PptxImport.tsx";
 import { SlideControls } from "./pptx/SlideControls.tsx";
+import { lessonAddress, WorkspaceTools } from "./workspace/WorkspaceTools.tsx";
+import { devicePreferences } from "../modules/workspace/preferences.ts";
+import { activityState } from "../modules/workspace/activity.ts";
 const canvasComponents = { Background: PaperBackground };
 const customTools = [PartialEraserTool, LaserTool];
 export function BoardScreen({ workspace }: { workspace: LocalWorkspace }) {
@@ -48,6 +52,12 @@ export function BoardScreen({ workspace }: { workspace: LocalWorkspace }) {
       {},
     );
   const ui = useSyncExternalStore(session.subscribe, session.getSnapshot);
+  const preferences = useSyncExternalStore(devicePreferences.subscribe, devicePreferences.getSnapshot);
+  useEffect(() => {
+    const selected = new URLSearchParams(location.search).get("lesson");
+    if (selected && selected !== workspace.lesson.id)
+      history.replaceState(null, "", lessonAddress(workspace.lesson.id));
+  }, [ui.editorEpoch, workspace]);
   const [scratchEpoch, setScratchEpoch] = useState(
     workspace.lesson.view.layout.open ? 0 : -1,
   );
@@ -82,6 +92,7 @@ export function BoardScreen({ workspace }: { workspace: LocalWorkspace }) {
     <div
       className="workspace"
       data-presenting={ui.presentation || ui.laser !== null}
+      data-reduce-motion={preferences.value.reduceMotion}
     >
       {header ? (
         <Chrome engine={header} notice={workspace.recoveryNotice} />
@@ -203,6 +214,7 @@ function EditorSurface({
               shapeUtils={shapeUtils}
               textOptions={textOptions}
               options={sdkOptions}
+              assetUrls={sdkAssetUrls}
               getShapeVisibility={wordVisibility}
               onMount={mount}
               licenseKey={getEditorLicenseKey(
@@ -230,7 +242,8 @@ function Chrome({ engine, notice }: { engine: BoardEngine; notice?: string }) {
   const state = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
   useEffect(() => {
     const unload = (e: BeforeUnloadEvent) => {
-      if (engine.saving.status.phase !== "saved" && !engine.state.readOnly) {
+      if (engine.saving.status.phase !== "saved" || engine.isPointing() ||
+        engine.editing.state.isTextEditing || activityState.getSnapshot().count) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -262,7 +275,10 @@ function Chrome({ engine, notice }: { engine: BoardEngine; notice?: string }) {
           />
           <SaveStatus engine={engine} />
         </div>
-        <LessonFiles engine={engine} />
+        <div className="workspace-actions">
+          <WorkspaceTools engine={engine} />
+          <LessonFiles engine={engine} />
+        </div>
       </header>
       <SaveError engine={engine} />
       {notice ? (

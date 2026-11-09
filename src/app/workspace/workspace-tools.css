@@ -1,0 +1,201 @@
+.workspace-actions,
+.workspace-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workspace-trigger {
+  white-space: nowrap;
+}
+
+.workspace-trigger-compact {
+  display: none;
+}
+
+.save-time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.save-time::before {
+  content: "· ";
+}
+
+.workspace-tools {
+  width: min(688px, calc(100vw - 32px));
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  padding: clamp(16px, 4vw, 26px);
+}
+
+.workspace-dialog-header,
+.workspace-list-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.workspace-dialog-header h2 {
+  margin: 0;
+}
+
+.workspace-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0 20px;
+  border-bottom: 1px solid var(--edge);
+  padding-bottom: 10px;
+}
+
+.workspace-tabs [aria-pressed="true"] {
+  border-color: #2b625f;
+  background: #edf6f3;
+  color: #194540;
+}
+
+.workspace-tools h3 {
+  margin: 14px 0 8px;
+  font-size: 16px;
+}
+
+.workspace-tools button,
+.workspace-tools select,
+.workspace-tools input[type="search"] {
+  min-height: 36px;
+}
+
+.workspace-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 16px 0;
+}
+
+.workspace-fields label,
+.workspace-search {
+  display: grid;
+  gap: 5px;
+}
+
+.workspace-fields select,
+.workspace-search input {
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid var(--edge);
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+
+.workspace-fields .workspace-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workspace-lesson-list {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 12px;
+}
+
+.workspace-lesson-list li,
+.workspace-shortcuts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--edge);
+  padding: 9px 0;
+}
+
+.workspace-lesson-list li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.workspace-lesson-list small {
+  display: block;
+  color: var(--muted);
+}
+
+.workspace-current {
+  color: #194540;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.workspace-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 12px 0;
+}
+
+.workspace-facts dd,
+.workspace-shortcuts dd {
+  margin: 0;
+}
+
+.workspace-facts dt,
+.workspace-shortcuts dt {
+  font-weight: 600;
+}
+
+.workspace-confirm {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+}
+
+.workspace-confirm p {
+  margin-top: 0;
+}
+
+.workspace-help details {
+  border-bottom: 1px solid var(--edge);
+  padding: 8px 0;
+}
+
+.workspace-help summary {
+  cursor: pointer;
+}
+
+.workspace-shortcuts kbd + kbd {
+  margin-inline-start: 4px;
+}
+
+.workspace[data-reduce-motion="true"]
+  :is(button, .workspace-tools, .palette, .file-message) {
+  transition: none;
+  animation: none;
+}
+
+@media (max-width: 530px) {
+  .workspace-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-actions {
+    flex-wrap: nowrap;
+  }
+
+  .workspace-trigger {
+    padding-inline: 7px;
+    font-size: 12px;
+  }
+
+  .workspace-trigger-full {
+    display: none;
+  }
+
+  .workspace-trigger-compact {
+    display: inline;
+  }
+}

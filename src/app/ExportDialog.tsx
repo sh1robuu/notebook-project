@@ -6,6 +6,7 @@ import { InteractiveExportWarning } from "../modules/pdf/export-contract.ts";
 import { checkAbort } from "../modules/pdf/runtime.ts";
 import { validatePaper } from "../modules/workspace/lesson-view.ts";
 import { playbackKey } from "./pptx/SlideCanvas.tsx";
+import { beginOperation } from "../modules/workspace/activity.ts";
 const defaults: ExportOptions = {
   format: "png",
   scope: "current",
@@ -47,6 +48,7 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
   }
   async function prepare(allowInteractivePlaceholders = false) {
     if (busy) return;
+    const finish = beginOperation("Xuất bảng");
     const job = new AbortController();
     abort.current = job;
     setBusy(true);
@@ -122,6 +124,7 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
         setProgress("");
       }
     } finally {
+      finish();
       if (abort.current === job) setBusy(false);
     }
   }

@@ -121,15 +121,37 @@ export async function verifySources(input: unknown): Promise<PdfSources> {
 }
 /** Metadata only: original bytes live in immutable IDB rows / separate ZIP entries. */
 export function serializedLesson(lesson: Lesson) {
-  const { pptxDecks, pptxSources, interactiveSources, ...base } = lesson;
+  const { pptxDecks, pptxSources, interactiveSources } = lesson;
+  const base = {
+    version: lesson.version,
+    sdkVersion: lesson.sdkVersion,
+    id: lesson.id,
+    title: lesson.title,
+    surfaceId: lesson.surfaceId,
+    pageId: lesson.pageId,
+    revision: lesson.revision,
+    createdAt: lesson.createdAt,
+    updatedAt: lesson.updatedAt,
+    document: lesson.document,
+    scratchpad: lesson.scratchpad,
+    view: lesson.view,
+    wordDraft: lesson.wordDraft,
+  };
   return {
     ...base,
     ...(interactiveSources && Object.keys(interactiveSources).length
       ? {
           interactiveSources: Object.fromEntries(
-            Object.entries(interactiveSources).map(
-              ([id, { bytes: _, ...meta }]) => [id, meta],
-            ),
+            Object.entries(interactiveSources).map(([id, source]) => [
+              id,
+              {
+                version: source.version,
+                id: source.id,
+                sha256: source.sha256,
+                kind: source.kind,
+                size: source.size,
+              },
+            ]),
           ),
         }
       : {}),
@@ -137,24 +159,59 @@ export function serializedLesson(lesson: Lesson) {
       ? {
           pptxDecks,
           pptxSources: Object.fromEntries(
-            Object.entries(pptxSources).map(([id, { bytes: _, ...meta }]) => [
+            Object.entries(pptxSources).map(([id, source]) => [
               id,
-              meta,
+              sourceMetadata(source),
             ]),
           ),
         }
       : {}),
     wordSources: Object.fromEntries(
-      Object.entries(lesson.wordSources ?? {}).map(
-        ([id, { bytes: _, ...meta }]) => [id, meta],
-      ),
-    ),
-    pdfSources: Object.fromEntries(
-      Object.entries(lesson.pdfSources).map(([id, { bytes: _, ...meta }]) => [
+      Object.entries(lesson.wordSources ?? {}).map(([id, source]) => [
         id,
-        meta,
+        sourceMetadata(source),
       ]),
     ),
+    pdfSources: Object.fromEntries(
+      Object.entries(lesson.pdfSources).map(([id, source]) => [
+        id,
+        {
+          sourceVersion: source.sourceVersion,
+          id: source.id,
+          sha256: source.sha256,
+          name: source.name,
+          size: source.size,
+          encrypted: source.encrypted,
+          pages: source.pages.map((page) => ({
+            width: page.width,
+            height: page.height,
+            rotation: page.rotation,
+            userUnit: page.userUnit,
+            viewBox: page.viewBox,
+            transform: page.transform,
+            rasterOnly: page.rasterOnly,
+            hasText: page.hasText,
+          })),
+        },
+      ]),
+    ),
+  };
+}
+function sourceMetadata(source: {
+  sourceVersion: 1;
+  id: string;
+  sha256: string;
+  name: string;
+  mime: string;
+  size: number;
+}) {
+  return {
+    sourceVersion: source.sourceVersion,
+    id: source.id,
+    sha256: source.sha256,
+    name: source.name,
+    mime: source.mime,
+    size: source.size,
   };
 }
 export function hydrateSources(

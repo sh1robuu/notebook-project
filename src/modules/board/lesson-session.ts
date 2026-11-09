@@ -100,11 +100,12 @@ export class LessonSession {
       editorEpoch: 0,
     };
     this.saving = new SaveCoordinator({
+      initialSavedAt: workspace.lastDurableAt,
       read: () => this.#capture(),
       canSave: () => [...this.engines.values()].every((e) => !e.isPointing()),
       write: async (value) => {
         try {
-          this.lastCommit = await workspace.save(
+          return this.lastCommit = await workspace.save(
             value,
             workspace.lesson.revision,
           );
@@ -533,6 +534,11 @@ export class LessonSession {
       throw new Error("Finish or cancel active input first.");
     this.#apply(await this.workspace.activatePrevious());
   }
+  applyWorkspaceLesson(lesson: Lesson) {
+    this.#generation++;
+    for (const engine of this.engines.values()) engine.cancel();
+    this.#apply(validateLesson(lesson));
+  }
   #apply(lesson: Lesson) {
     this.#suspended = true;
     try {
@@ -561,7 +567,7 @@ export class LessonSession {
         extension: false,
         editorEpoch: this.state.editorEpoch + 1,
       });
-      this.saving.reset();
+      this.saving.reset(this.workspace.lastDurableAt);
       this.#installShortcuts();
     } finally {
       this.#suspended = false;
