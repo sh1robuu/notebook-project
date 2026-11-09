@@ -350,6 +350,22 @@ export class ClipboardController {
         if (data.format !== "lessonboard.clipboard" || data.version !== 1)
           throw new Error("Unsupported app clipboard version.");
         const lesson = validateLesson(data.lesson);
+        const figures = Object.values(lesson.document.store).flatMap(
+          (record) =>
+            record.typeName === "shape" && record.type === "math-figure"
+              ? [record.props.figure]
+              : [],
+        );
+        if (figures.length) {
+          const { MathWorkerClient } = await import("../math/worker-client.ts");
+          const checker = new MathWorkerClient();
+          try {
+            const result = await checker.run({ kind: "verify", figures });
+            if (result.status !== "supported") throw new Error(result.message);
+          } finally {
+            checker.close();
+          }
+        }
         if (
           Object.values(lesson.document.store).some(
             (record) =>

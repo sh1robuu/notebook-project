@@ -175,6 +175,9 @@ export function ObjectProperties({ engine }: { engine: BoardEngine }) {
           </label>
         </>
       ) : null}
+      {single?.type === "math-figure" ? (
+        <button onClick={() => c.editMathFigure()}>Edit math figure</button>
+      ) : null}
       {single?.type === "equation" ? (
         <button onClick={() => c.editEquation()} aria-label="Edit equation">
           Edit equation

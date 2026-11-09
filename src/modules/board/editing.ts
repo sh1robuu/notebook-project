@@ -9,6 +9,7 @@ import {
   createShapeId,
   react,
   getPointsFromDrawSegments,
+  toRichText,
 } from "tldraw";
 import type {
   Editor,
@@ -26,12 +27,21 @@ import { prepareImage } from "../media/images.ts";
 import { MAX_TOTAL_IMAGE_BYTES } from "../media/image-format.ts";
 import { checkAssetBudget } from "../media/asset-budget.ts";
 import { canCreateShapes, withinCapacity } from "./capacity.ts";
+import type { MathFigure, MathFigureProps } from "../math/descriptor.ts";
+
+type MathTool = "graph" | "variation" | "calculator";
+export type MathPanelRequest = {
+  kind: MathTool;
+  scope: string;
+  shape?: { id: TLShapeId; props: MathFigureProps };
+};
 export type EditingState = {
   selected: readonly TLShape[];
   objects: number;
   ink: number;
   isTextEditing: boolean;
   equation: { id: TLShapeId | null; source: string } | null;
+  mathPanel: MathPanelRequest | null;
   message: string;
   busy: boolean;
   snap: boolean;
@@ -43,13 +53,13 @@ export class EditingController {
   #scope: () => string;
   #listeners = new Set<() => void>();
   #dispose: (() => void)[] = [];
-  #signature = "";
   state: EditingState = {
     selected: [],
     objects: 0,
     ink: 0,
     isTextEditing: false,
     equation: null,
+    mathPanel: null,
     message: "",
     busy: false,
     snap: false,
@@ -78,15 +88,15 @@ export class EditingController {
         const isTextEditing =
           editing?.type === "text" || !!editor.getRichTextEditor();
         const snap = editor.user.getIsSnapMode();
-        const signature = JSON.stringify({
-          selected,
-          objects,
-          ink,
-          isTextEditing,
-          snap,
-        });
-        if (signature !== this.#signature) {
-          this.#signature = signature;
+        const previous = this.state;
+        if (
+          selected.length !== previous.selected.length ||
+          selected.some((shape, index) => shape !== previous.selected[index]) ||
+          objects !== previous.objects ||
+          ink !== previous.ink ||
+          isTextEditing !== previous.isTextEditing ||
+          snap !== previous.snap
+        ) {
           this.#publish({
             selected,
             objects,
@@ -102,11 +112,18 @@ export class EditingController {
       const shape = editor.getShape((e as CustomEvent).detail);
       if (shape?.type === "equation") this.editEquation(shape.id);
     };
-    editor.getContainer().addEventListener("lessonboard:equation", onEquation);
+    const onMathFigure = (event: Event) =>
+      this.editMathFigure((event as CustomEvent<TLShapeId>).detail);
+    const container = editor.getContainer();
+    container.addEventListener("lessonboard:equation", onEquation);
+    container.addEventListener("lessonboard:math-figure", onMathFigure);
     this.#dispose.push(() =>
       editor
         .getContainer()
         .removeEventListener("lessonboard:equation", onEquation),
+    );
+    this.#dispose.push(() =>
+      container.removeEventListener("lessonboard:math-figure", onMathFigure),
     );
   }
   subscribe = (fn: () => void) => {
@@ -438,6 +455,109 @@ export class EditingController {
       }
     });
     if (success) this.closeEquation();
+  }
+  openMath(kind: MathTool) {
+    if (kind !== "calculator" && this.editor.getIsReadonly()) return;
+    this.editor.complete();
+    this.#publish({ mathPanel: { kind, scope: this.#scope() }, message: "" });
+  }
+  editMathFigure(id = this.editor.getOnlySelectedShapeId()) {
+    if (
+      !id ||
+      this.editor.getIsReadonly() ||
+      !this.editor.getCurrentPageShapeIds().has(id)
+    )
+      return;
+    const shape = this.editor.getShape(id);
+    if (shape?.type !== "math-figure" || shape.isLocked) return;
+    this.#publish({
+      mathPanel: {
+        kind: shape.props.figure.kind,
+        scope: this.#scope(),
+        shape: { id, props: shape.props },
+      },
+      message: "",
+    });
+  }
+  closeMath() {
+    this.#publish({ mathPanel: null });
+  }
+  saveMath(figure: MathFigure, dimensions: { w: number; h: number }) {
+    const request = this.state.mathPanel;
+    if (
+      !request ||
+      request.scope !== this.#scope() ||
+      request.kind !== figure.kind ||
+      this.editor.getIsReadonly()
+    )
+      return false;
+    const previous = request.shape;
+    return this.command("save math figure", () => {
+      if (previous) {
+        const shape = this.editor.getShape(previous.id);
+        if (
+          shape?.type !== "math-figure" ||
+          shape.isLocked ||
+          shape.props !== previous.props ||
+          !this.editor.getCurrentPageShapeIds().has(previous.id)
+        )
+          throw new Error(
+            "This figure changed while the panel was open. Reopen it to edit the latest version.",
+          );
+        this.editor.updateShape({
+          id: previous.id,
+          type: "math-figure",
+          props: { figure },
+        });
+        return;
+      }
+      const id = createShapeId();
+      if (!canCreateShapes(this.editor, [id]))
+        throw new Error("The page object limit has been reached.");
+      const center = this.editor.getViewportPageBounds().center;
+      this.editor.createShape({
+        id,
+        type: "math-figure",
+        x: center.x - dimensions.w / 2,
+        y: center.y - dimensions.h / 2,
+        props: { ...dimensions, figure },
+      });
+      if (!this.editor.getShape(id))
+        throw new Error("The figure could not be inserted.");
+      this.editor.setCurrentTool("select");
+      this.editor.select(id);
+    });
+  }
+  insertCalculation(text: string) {
+    const request = this.state.mathPanel;
+    if (
+      request?.kind !== "calculator" ||
+      request.scope !== this.#scope() ||
+      this.editor.getIsReadonly()
+    )
+      return false;
+    return this.command("insert calculation", () => {
+      const id = createShapeId();
+      if (!canCreateShapes(this.editor, [id]))
+        throw new Error("The page object limit has been reached.");
+      const center = this.editor.getViewportPageBounds().center;
+      this.editor.createShape({
+        id,
+        type: "text",
+        x: center.x - 160,
+        y: center.y - 40,
+        props: {
+          richText: toRichText(text),
+          w: 320,
+          autoSize: false,
+          font: "sans",
+        },
+      });
+      if (!this.editor.getShape(id))
+        throw new Error("The result could not be inserted.");
+      this.editor.setCurrentTool("select");
+      this.editor.select(id);
+    });
   }
   async importImages(
     files: File[],

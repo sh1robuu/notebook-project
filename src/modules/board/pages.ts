@@ -25,6 +25,7 @@ export class PageController {
   navigate(id: TLPageId) {
     this.engine.cancel();
     this.engine.session.activate("main");
+    if (!this.engine.session.workspace.readOnly) this.engine.saving.request();
     this.editor.setCurrentPage(id);
   }
   step(delta: number) {

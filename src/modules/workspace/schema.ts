@@ -1,5 +1,7 @@
 import { createTLSchema, defaultShapeSchemas } from "@tldraw/tlschema";
-import { T } from "@tldraw/validate";
+import { T, Validator } from "@tldraw/validate";
+import { validateMathFigure } from "../math/descriptor.ts";
+import type { MathFigureProps } from "../math/descriptor.ts";
 export type EquationProps = {
   w: number;
   h: number;
@@ -17,6 +19,7 @@ declare module "@tldraw/tlschema" {
   interface TLGlobalShapePropsMap {
     equation: EquationProps;
     "word-block": WordBlockProps;
+    "math-figure": MathFigureProps;
   }
 }
 export const equationProps = {
@@ -32,10 +35,16 @@ export const wordBlockProps = {
   documentId: T.string,
   blockId: T.string,
 };
+export const mathFigureProps = {
+  w: T.number,
+  h: T.number,
+  figure: new Validator(validateMathFigure),
+};
 export const lessonSchema = createTLSchema({
   shapes: {
     ...defaultShapeSchemas,
     equation: { props: equationProps },
     "word-block": { props: wordBlockProps },
+    "math-figure": { props: mathFigureProps },
   },
 });

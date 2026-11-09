@@ -1080,6 +1080,23 @@ dialog .dialog-title {
 .dialog-error {
   color: var(--danger);
 }
+.math-tools {
+  margin: 8px 0;
+}
+.math-tools summary {
+  cursor: pointer;
+  padding: 7px 8px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+}
+.math-tool-list {
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+}
+.math-tool-list button {
+  text-align: left;
+}
 /* 216 px controls + 8 px gutter + remaining viewport = a full-width writing surface. */
 @media (max-width: 1000px) {
   .brand {

@@ -16,6 +16,7 @@ import {
 } from "../pdf/sources.ts";
 import { verifyDocumentSources } from "../documents/sources.ts";
 import { hydratePptxSources, verifyPptxSources } from "../pptx/sources.ts";
+import { verifyMathFigures } from "../math/integrity.ts";
 const encoder = new TextEncoder(),
   decoder = new TextDecoder("utf-8", { fatal: true });
 const MAX_MANIFEST_BYTES = 512_000;
@@ -212,6 +213,15 @@ export async function decodeArchive(bytes: Uint8Array): Promise<Lesson> {
       pptxSources: hydratePptxSources(lesson.pptxSources, pptxBytes),
     };
   const validated = validateLesson(hydrateSources(lesson, sourceBytes));
+  verifyMathFigures(
+    [validated.document, validated.scratchpad.document].flatMap((document) =>
+      Object.values(document.store).flatMap((record) =>
+        record.typeName === "shape" && record.type === "math-figure"
+          ? [record.props.figure]
+          : [],
+      ),
+    ),
+  );
   if (
     Object.keys(validated.pdfSources).length !== Object.keys(sourceBytes).length
   )

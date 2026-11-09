@@ -13,6 +13,14 @@ import {
 import type { Lesson } from "../workspace/model.ts";
 import { PdfRuntime } from "../pdf/runtime.ts";
 import { SlidePlayback } from "../pptx/playback.ts";
+import { bindMathCapacity } from "./capacity.ts";
+import {
+  mathFigureSampleCount,
+  mathFigureSourceSize,
+  MAX_LESSON_MATH_SAMPLES,
+  MAX_LESSON_MATH_SOURCE_CHARS,
+} from "../math/descriptor.ts";
+import type { MathFigure } from "../math/descriptor.ts";
 import { validateDocument } from "../documents/model.ts";
 import type { DocumentModel } from "../documents/model.ts";
 import { verifyDocumentSources } from "../documents/sources.ts";
@@ -224,14 +232,56 @@ export class LessonSession {
           .filter((a): a is TLImageAsset => a.type === "image"),
       );
     this.engines.set(surface, engine);
+    const disposeMathBudget = bindMathCapacity(engine.pages.editor, () =>
+      this.#withinMathCapacity(),
+    );
     if (this.state.active === surface) this.#installShortcuts();
     this.#publish();
     return () => {
+      disposeMathBudget();
       if (this.engines.get(surface) === engine) {
         this.engines.delete(surface);
         if (this.state.active === surface) this.#installShortcuts();
       }
     };
+  }
+  #withinMathCapacity() {
+    let samples = 0;
+    let chars = 0;
+    const check = (figure: MathFigure) => {
+      samples += mathFigureSampleCount(figure);
+      chars += mathFigureSourceSize(figure);
+      return (
+        samples <= MAX_LESSON_MATH_SAMPLES &&
+        chars <= MAX_LESSON_MATH_SOURCE_CHARS
+      );
+    };
+    for (const surface of ["main", "scratchpad"] as const) {
+      const editor = this.engines.get(surface)?.pages.editor;
+      if (editor) {
+        const ids = editor.store.query
+          .ids("shape", () => ({ type: { eq: "math-figure" } }))
+          .get();
+        for (const id of ids) {
+          const shape = editor.getShape(id);
+          if (shape?.type === "math-figure" && !check(shape.props.figure))
+            return false;
+        }
+      } else {
+        const lesson = this.workspace.lesson;
+        const snapshot =
+          surface === "main" ? lesson.document : lesson.scratchpad.document;
+        for (const record of Object.values(snapshot.store)) {
+          if (
+            record.typeName === "shape" &&
+            record.type === "math-figure" &&
+            !check(record.props.figure)
+          )
+            return false;
+        }
+      }
+    }
+    return true;
   }
   remainingShapes() {
     return (

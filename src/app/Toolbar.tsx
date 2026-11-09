@@ -2,6 +2,7 @@ import { useRef, useSyncExternalStore } from "react";
 import type { BoardEngine, BoardTool } from "../modules/board/engine.ts";
 import { Icon } from "./Icon.tsx";
 import { ObjectProperties } from "./ObjectProperties.tsx";
+import { MathTools } from "./math/MathTools.tsx";
 const tools = [
   ["draw", "pen", "Pen", "P"],
   ["highlight", "highlight", "Highlighter", "Shift+P"],
@@ -107,6 +108,11 @@ export function Toolbar({ engine }: { engine: BoardEngine }) {
           <span>Image</span>
         </button>
       </div>
+      <MathTools
+        engine={engine}
+        request={editing.mathPanel}
+        readOnly={state.readOnly}
+      />
       <input
         hidden
         ref={file}

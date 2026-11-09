@@ -123,6 +123,17 @@ export class CommandRegistry {
         e.state.selected.length === 1 &&
         e.state.selected[0].type === "equation",
     );
+    add(
+      "math-figure",
+      "Edit math figure",
+      () => e.editMathFigure(),
+      ["Enter"],
+      () =>
+        writable() &&
+        e.state.selected.length === 1 &&
+        e.state.selected[0].type === "math-figure" &&
+        !e.state.selected[0].isLocked,
+    );
   }
   register(
     id: string,
@@ -176,6 +187,13 @@ export class CommandRegistry {
       (e) => {
         if (e.isComposing || this.#composing || e.keyCode === 229) return;
         const target = e.target instanceof Element ? e.target : null;
+        if (
+          (e.key === "Enter" || e.key === " ") &&
+          target?.closest('button,a[href],summary,[role="button"]')
+        ) {
+          e.stopImmediatePropagation();
+          return;
+        }
         const editable = target?.closest(
           'dialog,input,textarea,select,[role="menu"],[contenteditable="true"]',
         );

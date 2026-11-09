@@ -277,6 +277,7 @@ export class BoardEngine {
           this.session.armExtension(false);
           this.#pageEpoch++;
           this.#cameraPage = page;
+          if (!workspace.readOnly) this.saving.request();
           const stored = session.camera(surface, page);
           if (stored) {
             editor.setCamera(stored);
@@ -519,6 +520,7 @@ export class BoardEngine {
     this.stopLaser();
     this.session.armExtension(false);
     this.#guard.cancel();
+    if (this.editing.state.mathPanel) this.editing.closeMath();
     if (this.#editor.getEditingShapeId()) this.editing.textDone();
   }
   startLaser() {

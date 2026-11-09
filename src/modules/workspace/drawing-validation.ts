@@ -18,11 +18,19 @@ import {
   MAX_PAGES,
 } from "./contracts.ts";
 import { validatePaper } from "./lesson-view.ts";
+import {
+  mathFigureSampleCount,
+  mathFigureSourceSize,
+  MAX_LESSON_MATH_SAMPLES,
+  MAX_LESSON_MATH_SOURCE_CHARS,
+} from "../math/descriptor.ts";
 export type DrawingBudget = {
   shapes: number;
   pathChars: number;
   points: number;
   expandedPoints: number;
+  mathSamples?: number;
+  mathSourceChars?: number;
 };
 /** Internal drawing contract. assetsValidated is only for the already checked shared pool. */
 export function validateDrawing(
@@ -177,6 +185,7 @@ export function validateDrawing(
           "group",
           "equation",
           "word-block",
+          "math-figure",
         ].includes(String(record.type))
       )
         throw new WorkspaceError(
@@ -194,7 +203,29 @@ export function validateDrawing(
       if (!object(record.props))
         throw new WorkspaceError("invalid", "Invalid object properties.");
       const props = record.props as Record<string, unknown>;
-      finiteBox(props);
+      if (record.type === "math-figure") {
+        // A graph's mathematical coordinates and literals are independent of
+        // its board geometry. The descriptor validator already checked them.
+        finiteBox({ w: record.props.w, h: record.props.h });
+        if (record.props.w < 1 || record.props.h < 1)
+          throw new WorkspaceError("bounds", "Invalid math figure dimensions.");
+        budget.mathSamples =
+          (budget.mathSamples ?? 0) +
+          mathFigureSampleCount(record.props.figure);
+        if (budget.mathSamples > MAX_LESSON_MATH_SAMPLES)
+          throw new WorkspaceError(
+            "limit",
+            "Math graphs exceed the shared lesson sample limit.",
+          );
+        budget.mathSourceChars =
+          (budget.mathSourceChars ?? 0) +
+          mathFigureSourceSize(record.props.figure);
+        if (budget.mathSourceChars > MAX_LESSON_MATH_SOURCE_CHARS)
+          throw new WorkspaceError(
+            "limit",
+            "Math figures exceed the shared lesson source size limit.",
+          );
+      } else finiteBox(props);
       if (
         record.type === "word-block" &&
         (Number(props.w) < 1 ||
