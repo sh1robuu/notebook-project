@@ -14,6 +14,7 @@ import { prepareWorkspaceForNavigation } from "../../modules/workspace/activity.
 import { WorkspaceSettings } from "./WorkspaceSettings.tsx";
 import { WorkspaceHelp } from "./WorkspaceHelp.tsx";
 import { WorkspaceOffline, formatStorage } from "./WorkspaceOffline.tsx";
+import { classroomEnabled } from "../../config/classroom.ts";
 import "./workspace-tools.css";
 
 type Panel = "lessons" | "settings" | "offline" | "help" | "recovery";
@@ -284,6 +285,13 @@ export function WorkspaceTools({ engine }: { engine: BoardEngine }) {
                 </button>
               ))}
             </nav>
+            {classroomEnabled && panel === "lessons" && (
+              <p>
+                <a href="/classroom" target="_blank" rel="noopener noreferrer">
+                  Mở GroupHub trong tab mới
+                </a>
+              </p>
+            )}
             {panel === "settings" ? (
               <WorkspaceSettings
                 apply={(preferences) => {

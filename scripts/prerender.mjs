@@ -53,6 +53,14 @@ try {
   const output = process.argv[2] ?? "dist";
   const template = await readFile(join(output, "index.html"), "utf8");
   const origin = siteOrigin(env.VITE_SITE_URL || product.siteUrl);
+  if (env.VITE_CLASSROOM_ENABLED === "true") {
+    const classroom = template
+      .replace(/<title>.*?<\/title>/, "<title>GroupHub — Lessonboard</title>")
+      .replace(/^\s*<link[^>]+rel="(?:manifest|apple-touch-icon)"[^>]*>\r?\n/gm, "")
+      .replace(/(<meta\s+name="robots"\s+content=")[^"]*(")/s, "$1noindex, nofollow, noarchive$2")
+      .replace(/<div id="root">.*?<\/div>/s, '<div id="root"><main>Đang mở lớp học…</main></div>');
+    await writeFile(join(output, "classroom.html"), classroom);
+  }
   for (const path of [...publicPaths, "/app", "/404"]) {
     const isPublic = publicPaths.includes(path);
     const metadata = isPublic
