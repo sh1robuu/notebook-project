@@ -1,12 +1,15 @@
 import baseline from "./vercel-base.json" with { type: "json" };
 
+const productionClassroomApi = "https://noteboard-29bo.onrender.com";
+
 export function classroomVercelConfig(env: NodeJS.ProcessEnv) {
-  const enabled = env.VITE_CLASSROOM_ENABLED ?? "false";
+  const production = env.VERCEL_ENV === "production";
+  const enabled = env.VITE_CLASSROOM_ENABLED ?? (production ? "true" : "false");
   if (!["true", "false"].includes(enabled))
     throw new Error("VITE_CLASSROOM_ENABLED must be true or false.");
   if (enabled === "false") return baseline;
 
-  const origin = env.CLASSROOM_API_ORIGIN;
+  const origin = env.CLASSROOM_API_ORIGIN ?? (production ? productionClassroomApi : undefined);
   let url: URL;
   try { url = new URL(origin ?? ""); }
   catch { throw new Error("CLASSROOM_API_ORIGIN must be the actual Render HTTPS origin."); }
@@ -22,6 +25,7 @@ export function classroomVercelConfig(env: NodeJS.ProcessEnv) {
   ];
   return {
     ...baseline,
+    buildCommand: "VITE_CLASSROOM_ENABLED=true npm run build",
     rewrites: [
       { source: "/api/classroom/:path*", destination: origin + "/api/classroom/:path*" },
       { source: "/join", destination: "/classroom" },
