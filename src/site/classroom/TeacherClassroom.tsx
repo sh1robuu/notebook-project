@@ -57,7 +57,9 @@ export function TeacherClassroom() {
         if (!controller.signal.aborted)
           setState({ kind: "error", message: classroomError(error) });
       },
-    );
+    ).finally(() => {
+      if (request.current === controller) request.current = null;
+    });
   }, []);
 
   useEffect(() => {
@@ -75,15 +77,14 @@ export function TeacherClassroom() {
       // Server revalidation remains authoritative when cross-tab messaging is unavailable.
     }
     const visible = () => {
-      if (document.visibilityState === "visible") revalidate();
+      if (document.visibilityState === "visible" && !request.current) revalidate();
     };
     document.addEventListener("visibilitychange", visible);
-    const refresh = setInterval(() => {
-      if (document.visibilityState === "visible") revalidate();
-    }, 60_000);
+    const refresh = setInterval(visible, 60_000);
     revalidate();
     return () => {
       request.current?.abort();
+      request.current = null;
       channel.current?.close();
       clearInterval(refresh);
       document.removeEventListener("visibilitychange", visible);
@@ -117,6 +118,8 @@ export function TeacherClassroom() {
         message:
           "Chưa xác nhận được việc đăng xuất. Kiểm tra lại phiên của bạn.",
       });
+    } finally {
+      if (request.current === controller) request.current = null;
     }
   }
 

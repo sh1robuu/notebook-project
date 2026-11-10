@@ -88,12 +88,12 @@ type RequestOptions = {
 async function request<T>(
   path: string,
   { signal, body, csrfToken, key }: RequestOptions = {},
+  timeout = AbortSignal.timeout(18_000),
 ): Promise<T> {
   const headers = new Headers({ Accept: "application/json" });
   if (body !== undefined) headers.set("Content-Type", "application/json");
   if (csrfToken) headers.set("x-classroom-csrf", csrfToken);
   if (key) headers.set("Idempotency-Key", key);
-  const timeout = AbortSignal.timeout(18_000);
   let response: Response;
   try {
     response = await fetch(classroomApiPrefix + path, {
@@ -125,14 +125,48 @@ async function request<T>(
   return content as T;
 }
 
+function waitForRetry(milliseconds: number, signal: AbortSignal) {
+  if (signal.aborted) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    const timer = setTimeout(finish, milliseconds);
+    function finish() {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", finish);
+      resolve();
+    }
+    signal.addEventListener("abort", finish, { once: true });
+  });
+}
+
+async function teacherSession(signal?: AbortSignal): Promise<TeacherSession> {
+  // Render Free may take about a minute to wake. Only the session read waits
+  // and retries across that window; classroom mutations keep their own budget.
+  const deadline = AbortSignal.timeout(90_000);
+  const waiting = signal ? AbortSignal.any([signal, deadline]) : deadline;
+  let retryDelay = 2_000;
+  while (!waiting.aborted) {
+    try {
+      return await request<TeacherSession>("/auth/session", { signal }, deadline);
+    } catch (error) {
+      if (waiting.aborted) break;
+      if (!(error instanceof ClassroomError) ||
+          ![0, 502, 503, 504].includes(error.status) ||
+          globalThis.navigator?.onLine === false) throw error;
+      await waitForRetry(retryDelay, waiting);
+      retryDelay = Math.min(retryDelay * 2, 12_000);
+    }
+  }
+  signal?.throwIfAborted();
+  throw new ClassroomError(503, "session_timeout");
+}
+
 export function roomPath(id: string) {
   return "/rooms/" + encodeURIComponent(id);
 }
 
 export const classroomApi = {
   googleSignIn: classroomApiPrefix + "/auth/google",
-  teacherSession: (signal?: AbortSignal) =>
-    request<TeacherSession>("/auth/session", { signal }),
+  teacherSession,
   teacherLogout: (csrfToken: string, signal?: AbortSignal) =>
     request<void>("/auth/logout", { body: {}, csrfToken, signal }),
   rooms: (signal?: AbortSignal) =>
@@ -187,6 +221,8 @@ export function classroomError(
   operation: "join" | "other" = "other",
 ): string {
   if (error instanceof ClassroomError) {
+    if (error.code === "session_timeout")
+      return "Máy chủ GroupHub phản hồi chậm. Hãy kiểm tra lại phiên để thử lại.";
     if (error.status === 429)
       return "Có quá nhiều yêu cầu. Đợi một lúc rồi thử lại.";
     if (error.status === 0)
