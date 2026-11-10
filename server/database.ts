@@ -1,14 +1,48 @@
 import { Pool } from "pg";
+import { setTimeout as delay } from "node:timers/promises";
 
 export function openClassroomPool(connectionString: string) {
   return new Pool({
     connectionString,
     max: 12,
-    connectionTimeoutMillis: 4_000,
+    connectionTimeoutMillis: 12_000,
     idleTimeoutMillis: 15_000,
-    statement_timeout: 8_000,
-    idle_in_transaction_session_timeout: 10_000,
+    enableChannelBinding: true,
   });
+}
+
+const transientStartupCodes = new Set([
+  "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT", "EHOSTUNREACH", "ENETUNREACH", "EAI_AGAIN",
+  "08000", "08001", "08003", "08006", "57P01", "57P02", "57P03",
+]);
+const connectionTimeoutMessages = new Set([
+  "timeout expired",
+  "timeout exceeded when trying to connect",
+  "Connection terminated",
+  "Connection terminated unexpectedly",
+  "Connection terminated due to connection timeout",
+]);
+
+// Only the read-only startup check is retried. Room writes retain their existing
+// transaction and idempotency contracts. Permanent configuration errors stop here.
+export async function waitForClassroomDatabase(
+  pool: Pool,
+  pause: (milliseconds: number) => Promise<void> = delay,
+) {
+  const backoff = [1_000, 2_000, 4_000];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await assertClassroomDatabase(pool);
+      return;
+    } catch (error) {
+      const code = (error as { code?: unknown } | null)?.code;
+      const transient = typeof code === "string"
+        ? transientStartupCodes.has(code)
+        : error instanceof Error && connectionTimeoutMessages.has(error.message);
+      if (!transient || attempt === backoff.length) throw error;
+      await pause(backoff[attempt]);
+    }
+  }
 }
 
 export async function assertClassroomDatabase(pool: Pool) {

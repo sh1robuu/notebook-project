@@ -1,5 +1,4 @@
-# Only the built dist output is public. Also keep development/recovery data out
-# of the uploaded build context; public runtime assets remain included.
+# Only built dist output is public. Exclude local secrets and recovery material.
 .git
 .vercel
 .env*
@@ -18,7 +17,8 @@ test-results
 playwright-report
 coverage
 playwright*.ts
+render-env.local.txt*
+.render-env.local.txt*
 *.log
 *.teachboard
 *.zip
-

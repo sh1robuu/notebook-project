@@ -1,6 +1,6 @@
 import { buildClassroomApp } from "./app.ts";
 import { loadClassroomConfig } from "./config.ts";
-import { assertClassroomDatabase, openClassroomPool } from "./database.ts";
+import { openClassroomPool, waitForClassroomDatabase } from "./database.ts";
 
 async function main() {
   const config = loadClassroomConfig();
@@ -8,7 +8,7 @@ async function main() {
   // Pool errors can contain connection details. Only the state is logged.
   pool.on("error", () => console.error("An idle classroom database connection closed."));
   try {
-    await assertClassroomDatabase(pool);
+    await waitForClassroomDatabase(pool);
     const app = await buildClassroomApp(config, { pool });
     try {
       await app.listen({ host: config.host, port: config.port });

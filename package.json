@@ -13,6 +13,10 @@
     "build": "tsc --noEmit && vite build && node scripts/prerender.mjs && node scripts/pwa-build.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
     "typecheck": "tsc --noEmit",
+    "classroom:build": "tsc --noEmit -p tsconfig.server.json",
+    "classroom:start": "node server/index.ts",
+    "classroom:prepare": "node server/hosting/prepare.ts",
+    "classroom:bootstrap": "node --env-file-if-exists=.env.local server/hosting/bootstrap.ts",
     "classroom": "node --env-file-if-exists=.env.local server/index.ts",
     "classroom:migrate": "node --env-file-if-exists=.env.local server/migrate.ts",
     "classroom:maintain": "node --env-file-if-exists=.env.local server/maintain.ts"
@@ -46,6 +50,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
+    "@neondatabase/serverless": "1.2.0",
     "@playwright/test": "1.64.1",
     "@tldraw/assets": "5.6.0",
     "@tldraw/utils": "5.6.0",

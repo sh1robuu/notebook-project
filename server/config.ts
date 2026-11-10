@@ -56,10 +56,10 @@ export function loadClassroomConfig(env: NodeJS.ProcessEnv = process.env): Class
   const roomSecret = value(env, "CLASSROOM_ROOM_SECRET");
   if (!/^[A-Za-z0-9_-]{43,128}$/.test(roomSecret))
     throw new Error("CLASSROOM_ROOM_SECRET must contain at least 32 random bytes encoded as base64url.");
-  const host = env.CLASSROOM_BIND_HOST?.trim() || "127.0.0.1";
+  const host = env.CLASSROOM_BIND_HOST?.trim() || (env.RENDER === "true" ? "0.0.0.0" : "127.0.0.1");
   if (!isIP(host)) throw new Error("CLASSROOM_BIND_HOST must be an IP address.");
-  const port = Number(env.CLASSROOM_PORT ?? "8787");
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("CLASSROOM_PORT must be a valid port.");
+  const port = Number(env.PORT ?? env.CLASSROOM_PORT ?? "8787");
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("PORT or CLASSROOM_PORT must be a valid port.");
   const serveDist = env.CLASSROOM_SERVE_DIST ?? "false";
   if (!["true", "false"].includes(serveDist)) throw new Error("CLASSROOM_SERVE_DIST must be true or false.");
   const proxySetting = env.CLASSROOM_TRUST_PROXIES?.trim();

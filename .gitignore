@@ -9,6 +9,8 @@ coverage/
 .env
 .env.*
 !.env.example
+/render-env.local.txt*
+/.render-env.local.txt*
 .vercel/
 .agents/
 .codex/

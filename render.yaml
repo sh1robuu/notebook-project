@@ -1,0 +1,32 @@
+# Creates one backend only. Neon is configured separately; no paid database/disk.
+services:
+  - type: web
+    name: noteboard
+    runtime: node
+    plan: free
+    region: singapore
+    branch: codex/s09-classroom-foundation
+    rootDir: .
+    autoDeployTrigger: off
+    buildCommand: npm ci --include=dev && npm run classroom:build
+    startCommand: npm run classroom:start
+    healthCheckPath: /api/classroom/ready
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: NODE_ENV
+        value: production
+      - key: CLASSROOM_BIND_HOST
+        value: 0.0.0.0
+      - key: CLASSROOM_ORIGIN
+        value: https://noteboardbymaikhuyen.vercel.app
+      - key: CLASSROOM_SERVE_DIST
+        value: "false"
+      - key: CLASSROOM_DATABASE_URL
+        sync: false
+      - key: CLASSROOM_GOOGLE_CLIENT_ID
+        sync: false
+      - key: CLASSROOM_GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: CLASSROOM_ROOM_SECRET
+        sync: false
