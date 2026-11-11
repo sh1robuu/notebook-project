@@ -6,7 +6,7 @@ import {
 import type { TLStoreSnapshot } from "tldraw";
 import Dexie from "dexie";
 import { WorkspaceDatabase } from "./database.ts";
-import type { StoredLesson } from "./database.ts";
+import type { BoardInsertionRecord, StoredLesson } from "./database.ts";
 import { storageError } from "./contracts.ts";
 import { WriterLease } from "./writer-lease.ts";
 import { digest, makeLesson, validateLesson, WorkspaceError } from "./model.ts";
@@ -402,6 +402,9 @@ export class LocalWorkspace {
       "The saved lesson is damaged and no verified checkpoint is available. Existing data has been kept.",
     );
   }
+  async boardInsertion(id: string) {
+    return (await this.#db.meta.get("board-insertion:" + id))?.insertion;
+  }
   async save(
     value: { document: TLStoreSnapshot; title: string } & Partial<
       Pick<
@@ -415,6 +418,7 @@ export class LocalWorkspace {
       >
     >,
     expectedRevision: number,
+    insertions: readonly BoardInsertionRecord[] = [],
   ): Promise<CommitReceipt> {
     try {
       const start = performance.now(),
@@ -474,6 +478,7 @@ export class LocalWorkspace {
           this.#db.checkpoints,
           this.#db.leases,
           this.#db.documentSources,
+          ...(insertions.length ? [this.#db.meta] : []),
         ],
         async () => {
           await this.#assertWriter(id);
@@ -487,6 +492,19 @@ export class LocalWorkspace {
               "conflict",
               "A newer lesson revision exists. Download this tab’s work before reopening.",
             );
+          for (const insertion of insertions) {
+            const drawing = insertion.surface === "main" ? lesson.document : lesson.scratchpad.document;
+            if (insertion.lessonId !== id || !drawing.store[insertion.shapeId as keyof typeof drawing.store])
+              throw new WorkspaceError("conflict", "The classroom insertion target changed.");
+            const key = "board-insertion:" + insertion.id;
+            const previous = await this.#db.meta.get(key);
+            if (previous?.insertion) {
+              const receipt = previous.insertion;
+              if (receipt.lessonId !== id || receipt.surface !== insertion.surface ||
+                  receipt.pageId !== insertion.pageId || receipt.shapeId !== insertion.shapeId)
+                throw new WorkspaceError("conflict", "This classroom insertion is already bound to another page.");
+            } else await this.#db.meta.add({ key, lessonId: id, insertion: { ...insertion, revision: lesson.revision } });
+          }
           if (unchanged) return;
           await storeDocumentSources(this.#db, [
             ...Object.values(newSources),

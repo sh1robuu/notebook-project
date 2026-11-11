@@ -22,6 +22,7 @@
     "classroom:maintain": "node --env-file-if-exists=.env.local server/maintain.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1166.0",
     "@cantoo/pdf-lib": "2.11.1",
     "@fastify/cookie": "11.1.5",
     "@fastify/rate-limit": "10.3.0",
@@ -42,6 +43,7 @@
     "qrcode": "1.5.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "sharp": "0.35.5",
     "svg-pathdata": "9.0.0",
     "tldraw": "5.6.0",
     "workbox-core": "7.4.1",

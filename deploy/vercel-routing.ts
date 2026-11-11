@@ -5,6 +5,7 @@ const productionClassroomApi = "https://noteboard-29bo.onrender.com";
 export function classroomVercelConfig(env: NodeJS.ProcessEnv) {
   const production = env.VERCEL_ENV === "production";
   const enabled = env.VITE_CLASSROOM_ENABLED ?? (production ? "true" : "false");
+  const participation = env.VITE_S10_ENABLED === "true";
   if (!["true", "false"].includes(enabled))
     throw new Error("VITE_CLASSROOM_ENABLED must be true or false.");
   if (enabled === "false") return baseline;
@@ -29,11 +30,12 @@ export function classroomVercelConfig(env: NodeJS.ProcessEnv) {
     rewrites: [
       { source: "/api/classroom/:path*", destination: origin + "/api/classroom/:path*" },
       { source: "/join", destination: "/classroom" },
+      ...(participation ? [{ source: "/capture", destination: "/classroom" }] : []),
       ...baseline.rewrites,
     ],
     headers: [
       ...baseline.headers,
-      ...["/classroom", "/join", "/api/classroom/:path*"].map(source => ({ source, headers: privateHeaders })),
+      ...["/classroom", "/join", ...(participation ? ["/capture"] : []), "/api/classroom/:path*"].map(source => ({ source, headers: privateHeaders })),
     ],
   };
 }

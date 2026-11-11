@@ -237,7 +237,8 @@ async function applyCommand(
       if (command.groupId !== null) {
         changed(
           await db.query(
-            "SELECT 1 FROM public.classroom_groups WHERE room_id = $1 AND id = $2",
+            `SELECT 1 FROM public.classroom_groups g WHERE g.room_id=$1 AND g.id=$2
+              AND to_jsonb(g)->>'removed_at' IS NULL`,
             [room.id, command.groupId],
           ),
         );
@@ -253,7 +254,8 @@ async function applyCommand(
     }
     case "createGroup": {
       const result = await db.query<{ total: number }>(
-        "SELECT count(*)::integer AS total FROM public.classroom_groups WHERE room_id = $1",
+        `SELECT count(*)::integer AS total FROM public.classroom_groups g
+          WHERE g.room_id=$1 AND to_jsonb(g)->>'removed_at' IS NULL`,
         [room.id],
       );
       if (result.rows[0].total >= limits.groups)
@@ -271,23 +273,31 @@ async function applyCommand(
     case "renameGroup":
       changed(
         await db.query(
-          "UPDATE public.classroom_groups SET name = $3 WHERE room_id = $1 AND id = $2",
+          `UPDATE public.classroom_groups g SET name=$3 WHERE g.room_id=$1 AND g.id=$2
+            AND to_jsonb(g)->>'removed_at' IS NULL`,
           [room.id, command.groupId, command.name],
         ),
       );
       return;
-    case "deleteGroup":
+    case "deleteGroup": {
+      const { rows: [migration] } = await db.query<{ participation: boolean }>(
+        "SELECT to_regclass('public.classroom_tasks') IS NOT NULL AS participation",
+      );
       await db.query(
         "UPDATE public.classroom_participants SET group_id = NULL WHERE room_id = $1 AND group_id = $2",
         [room.id, command.groupId],
       );
       changed(
         await db.query(
-          "DELETE FROM public.classroom_groups WHERE room_id = $1 AND id = $2",
+          migration.participation
+            ? `UPDATE public.classroom_groups SET removed_at=statement_timestamp()
+                 WHERE room_id=$1 AND id=$2 AND removed_at IS NULL`
+            : "DELETE FROM public.classroom_groups WHERE room_id=$1 AND id=$2",
           [room.id, command.groupId],
         ),
       );
       return;
+    }
   }
 }
 

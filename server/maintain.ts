@@ -1,5 +1,6 @@
 import { openClassroomPool } from "./database.ts";
 import { pruneClassroomData } from "./maintenance.ts";
+import { createMediaStore, loadMediaConfig } from "./media/store.ts";
 
 const url = process.env.CLASSROOM_MIGRATION_URL;
 if (!url) {
@@ -12,14 +13,18 @@ if (!url) {
   const roomId = arguments_.find(value => value.startsWith("--room="))?.slice(7);
   const pool = openClassroomPool(url);
   try {
+    const apply = arguments_.includes("--apply");
     const result = await pruneClassroomData(pool, {
       retentionDays: Number(process.env.CLASSROOM_ARCHIVED_RETENTION_DAYS ?? "30"),
-      apply: arguments_.includes("--apply"),
+      apply,
       roomId,
+      mediaStore: apply ? createMediaStore(loadMediaConfig()) : undefined,
     });
     console.log(JSON.stringify(result));
+    if (apply && (result.deferredMedia || result.purgedRooms < result.eligibleRooms.length))
+      process.exitCode = 1;
   } catch {
-    console.error("Classroom maintenance did not complete. No partial transaction was committed.");
+    console.error("Classroom maintenance did not complete. Rerun it to retry pending deletions.");
     process.exitCode = 1;
   } finally {
     await pool.end();

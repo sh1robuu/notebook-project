@@ -20,6 +20,7 @@ export type ClassroomConfig = {
   google: { clientId: string; clientSecret: string };
   roomSecret: string;
   serveDist: boolean;
+  s10Enabled?: boolean;
   trustedProxies: string[];
 };
 
@@ -62,6 +63,8 @@ export function loadClassroomConfig(env: NodeJS.ProcessEnv = process.env): Class
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("PORT or CLASSROOM_PORT must be a valid port.");
   const serveDist = env.CLASSROOM_SERVE_DIST ?? "false";
   if (!["true", "false"].includes(serveDist)) throw new Error("CLASSROOM_SERVE_DIST must be true or false.");
+  const s10Enabled = env.CLASSROOM_S10_ENABLED ?? "false";
+  if (!["true", "false"].includes(s10Enabled)) throw new Error("CLASSROOM_S10_ENABLED must be true or false.");
   const proxySetting = env.CLASSROOM_TRUST_PROXIES?.trim();
   const trustedProxies = proxySetting ? proxySetting.split(",").map((ip) => ip.trim()) : [];
   if (trustedProxies.some((ip) => !isIP(ip))) throw new Error("CLASSROOM_TRUST_PROXIES must list exact proxy IP addresses.");
@@ -73,6 +76,7 @@ export function loadClassroomConfig(env: NodeJS.ProcessEnv = process.env): Class
     databaseUrl,
     roomSecret,
     serveDist: serveDist === "true",
+    s10Enabled: s10Enabled === "true",
     trustedProxies,
     google: {
       clientId: value(env, "CLASSROOM_GOOGLE_CLIENT_ID"),

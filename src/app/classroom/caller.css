@@ -1,0 +1,235 @@
+dialog.caller-panel {
+  width: min(440px, calc(100vw - 24px));
+}
+
+dialog.caller-panel input[hidden] {
+  display: none;
+}
+
+.caller-panel .context-panel-heading {
+  margin-bottom: 12px;
+}
+
+.caller-panel label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.caller-panel :is(input:not([type="file"]), textarea, select) {
+  width: 100%;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--paper);
+  color: inherit;
+  font: inherit;
+}
+
+.caller-panel textarea {
+  min-height: 56px;
+  resize: vertical;
+}
+
+.caller-panel :is(button, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--accent, #8d1726);
+  outline-offset: 2px;
+}
+
+.caller-class-row,
+.caller-draw-actions,
+.caller-hosted-row,
+.caller-title-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.caller-create,
+.caller-roster,
+.caller-draw {
+  display: grid;
+  gap: 8px;
+}
+
+.caller-create {
+  margin-block: 10px 12px;
+}
+
+.caller-create > button {
+  justify-self: start;
+}
+
+.caller-draw {
+  margin-block: 12px;
+  padding: 10px;
+  border: 1px solid var(--edge);
+  border-radius: 5px;
+  background: var(--frame);
+}
+
+.caller-draw-actions label {
+  justify-self: start;
+}
+
+.caller-remaining {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.caller-result:empty {
+  display: none;
+}
+
+.caller-result {
+  padding-block: 6px;
+  border-block: 1px solid var(--edge);
+}
+
+.caller-result h3 {
+  margin: 0 0 4px;
+  font-size: 12px;
+}
+
+.caller-result ol,
+.caller-roster ol {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.caller-result li {
+  padding-block: 4px;
+  font-size: 15px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.caller-result-actions,
+.caller-confirm,
+.caller-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.caller-confirm {
+  border-top: 1px solid var(--edge);
+  padding-top: 7px;
+}
+
+.caller-confirm p {
+  flex-basis: 100%;
+}
+
+.caller-details {
+  margin-block: 8px;
+  border-top: 1px solid var(--edge);
+  padding-top: 5px;
+}
+
+.caller-details > summary {
+  min-height: 30px;
+  line-height: 30px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.caller-details > p {
+  margin-block: 5px;
+}
+
+.caller-roster {
+  margin-block: 5px 8px;
+}
+
+.caller-roster ol {
+  max-height: 220px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.caller-learner,
+.caller-learner form,
+.caller-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.caller-learner {
+  padding: 4px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.caller-learner form {
+  flex: 1 1 auto;
+}
+
+.caller-mark,
+.caller-ordinal,
+.caller-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.caller-ordinal {
+  min-width: 2ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.caller-mark {
+  flex: 0 0 55px;
+  text-align: center;
+}
+
+.caller-learner button {
+  display: inline-grid;
+  place-items: center;
+  min-width: 27px;
+  padding: 0;
+  border-color: transparent;
+}
+
+.caller-panel button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.caller-hosted-row {
+  margin-top: 8px;
+}
+
+.caller-error,
+.caller-status {
+  margin-top: 8px;
+}
+
+.caller-error {
+  color: #9f1222;
+  font-weight: 550;
+}
+
+@media (max-width: 720px) {
+  dialog.caller-panel {
+    width: 100%;
+  }
+}
+
+@media (pointer: coarse) {
+  .caller-panel button,
+  .caller-panel summary {
+    min-height: 44px;
+  }
+  .caller-panel summary {
+    line-height: 44px;
+  }
+  .caller-learner button {
+    min-width: 34px;
+  }
+}

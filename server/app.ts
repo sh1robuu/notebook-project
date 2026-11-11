@@ -5,14 +5,15 @@ import type { Pool } from "pg";
 import type { Configuration } from "openid-client";
 import { registerAuth } from "./auth/index.ts";
 import { registerRoomRoutes } from "./rooms/index.ts";
+import type { MediaStore } from "./media/store.ts";
 import { isClassroomMutation, isClassroomRequest } from "./config.ts";
 import type { ClassroomConfig } from "./config.ts";
-import { assertClassroomDatabase } from "./database.ts";
+import { assertClassroomDatabase, assertParticipationSchema } from "./database.ts";
 import { registerClassroomSite } from "./site.ts";
 
 export async function buildClassroomApp(
   config: ClassroomConfig,
-  dependencies: { pool: Pool; oidcConfiguration?: () => Promise<Configuration>; dist?: string },
+  dependencies: { pool: Pool; oidcConfiguration?: () => Promise<Configuration>; dist?: string; mediaStore?: MediaStore },
 ) {
   const app = Fastify({
     bodyLimit: 16_384,
@@ -58,6 +59,7 @@ export async function buildClassroomApp(
     app.get("/api/classroom/ready", async (_request, reply) => {
       try {
         await assertClassroomDatabase(dependencies.pool);
+        if (config.s10Enabled) await assertParticipationSchema(dependencies.pool);
         return { status: "ready" };
       } catch {
         return reply.code(503).send({ status: "unavailable" });
@@ -74,7 +76,26 @@ export async function buildClassroomApp(
       origin: config.origin,
       secret: config.roomSecret,
     });
-    if (config.serveDist) await registerClassroomSite(app, dependencies.dist ?? "dist");
+    if (config.s10Enabled) {
+      await assertParticipationSchema(dependencies.pool);
+      const [{ registerParticipationRoutes }, { registerMediaRoutes }, { createMediaStore, loadMediaConfig }] =
+        await Promise.all([
+          import("./rooms/participation.ts"),
+          import("./media/routes.ts"),
+          import("./media/store.ts"),
+        ]);
+      registerParticipationRoutes(app, {
+        pool: dependencies.pool,
+        origin: config.origin,
+        secret: config.roomSecret,
+      });
+      await registerMediaRoutes(app, {
+        pool: dependencies.pool,
+        origin: config.origin,
+        store: dependencies.mediaStore ?? createMediaStore(loadMediaConfig()),
+      });
+    }
+    if (config.serveDist) await registerClassroomSite(app, dependencies.dist ?? "dist", config.s10Enabled);
     return app;
   } catch (error) {
     await app.close();

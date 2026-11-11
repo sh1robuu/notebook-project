@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
+import { participationEnabled } from "../../config/classroom.ts";
 import {
   classroomApi,
   invitationLink,
@@ -22,6 +31,8 @@ import {
 } from "./ClassroomFrame.tsx";
 import { RoomFields } from "./RoomFields.tsx";
 import { Roster, RoomGroups } from "./RoomRoster.tsx";
+
+const TeacherParticipation = lazy(() => import("./TeacherParticipation.tsx"));
 
 export type Confirmation = {
   heading: string;
@@ -159,6 +170,16 @@ export function RoomDetail({
           </div>
         )}
       </div>
+      {participationEnabled && (
+        <Suspense fallback={null}>
+          <TeacherParticipation
+            key={room.id}
+            room={room}
+            csrfToken={csrfToken}
+            onDenied={accessLost}
+          />
+        </Suspense>
+      )}
       <div className="classroom-room-content">
         <Roster
           room={room}

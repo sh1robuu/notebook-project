@@ -64,3 +64,13 @@ export async function assertClassroomDatabase(pool: Pool) {
     throw new Error("Classroom migrations or restricted database role are missing.");
   }
 }
+
+export async function assertParticipationSchema(pool: Pool) {
+  const { rows: [row] } = await pool.query<{ ready: boolean }>(`
+    SELECT to_regclass('public.classroom_participation_receipts') IS NOT NULL
+      AND to_regprocedure('public.classroom_s10_redeem_capture(text,uuid,text,text)') IS NOT NULL
+      AND to_regprocedure('public.classroom_s10_read_product_media(uuid,uuid)') IS NOT NULL
+      AS ready
+  `);
+  if (row?.ready !== true) throw new Error("Classroom participation migrations are missing.");
+}

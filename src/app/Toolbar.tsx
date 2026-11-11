@@ -2,6 +2,7 @@ import { useRef, useState, useSyncExternalStore } from "react";
 import type { CSSProperties, ComponentProps } from "react";
 import type { BoardEngine } from "../modules/board/engine.ts";
 import { Icon } from "./Icon.tsx";
+import { CallerTools } from "./classroom/CallerTools.tsx";
 import { ObjectProperties } from "./ObjectProperties.tsx";
 import { MathTools } from "./math/MathTools.tsx";
 import { InteractiveTools } from "./interactive/InteractiveTools.tsx";
@@ -125,6 +126,7 @@ export function Toolbar({ engine }: { engine: BoardEngine }) {
             engine={engine}
             canInsert={!readOnly}
           />
+          <CallerTools engine={engine} />
         </div>
         <DrawingSettings engine={engine} />
       </AdaptiveTools>

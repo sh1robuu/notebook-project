@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { FormEvent } from "react";
+import { participationEnabled } from "../../config/classroom.ts";
 import {
   ClassroomError,
   classroomApi,
@@ -19,6 +27,8 @@ import {
   roomMode,
   roomState,
 } from "./ClassroomFrame.tsx";
+
+const StudentParticipation = lazy(() => import("./StudentParticipation.tsx"));
 
 type State =
   | { kind: "checking" }
@@ -244,6 +254,15 @@ function StudentRoom({
           <dd>{room.self.group?.name ?? "Chưa vào nhóm"}</dd>
         </div>
       </dl>
+      {participationEnabled && (
+        <Suspense fallback={null}>
+          <StudentParticipation
+            key={room.id + ":" + room.self.id}
+            room={room}
+            onDenied={expired}
+          />
+        </Suspense>
+      )}
       {live.error && (
         <div className="classroom-notice">
           <p role="alert">{live.error} Đang hiện dữ liệu gần nhất.</p>

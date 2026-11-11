@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { BoardEngine } from "../modules/board/engine.ts";
 import { activityState } from "../modules/workspace/activity.ts";
-import { classroomEnabled } from "../config/classroom.ts";
+import { classroomEnabled, participationEnabled } from "../config/classroom.ts";
 import { product } from "../config/product.ts";
 import { SaveError, SaveStatus } from "./SaveStatus.tsx";
 import { LessonFiles } from "./LessonFiles.tsx";
@@ -14,6 +14,7 @@ import { PresentationControls } from "./PresentationControls.tsx";
 import { PageRailToggle } from "./PageManager.tsx";
 import { AdaptiveTools } from "./ToolDisclosures.tsx";
 import { Icon } from "./Icon.tsx";
+import { BoardClassroom } from "./classroom/BoardClassroom.tsx";
 
 export function CommandBar({
   engine,
@@ -84,6 +85,7 @@ export function CommandBar({
                 <ExportDialog engine={main} />
               </div>
             </details>
+            {participationEnabled && <BoardClassroom engine={engine} />}
           </div>
           <PresentationControls session={engine.session} />
         </AdaptiveTools>

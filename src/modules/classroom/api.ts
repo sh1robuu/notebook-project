@@ -85,7 +85,7 @@ type RequestOptions = {
   key?: string;
 };
 
-async function request<T>(
+export async function classroomRequest<T>(
   path: string,
   { signal, body, csrfToken, key }: RequestOptions = {},
   timeout = AbortSignal.timeout(18_000),
@@ -124,6 +124,7 @@ async function request<T>(
   }
   return content as T;
 }
+const request = classroomRequest;
 
 function waitForRetry(milliseconds: number, signal: AbortSignal) {
   if (signal.aborted) return Promise.resolve();

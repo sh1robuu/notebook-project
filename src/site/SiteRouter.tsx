@@ -6,13 +6,15 @@ import { product } from "../config/product.ts";
 import { editorReleaseState, getEditorLicenseKey } from "../config/release.ts";
 import { isPublicPath, pageContent } from "./content.ts";
 import { InfoPage } from "./InfoPage.tsx";
-import { classroomEnabled } from "../config/classroom.ts";
+import { classroomEnabled, participationEnabled } from "../config/classroom.ts";
 const Editor = lazy(() => import("../app/EditorEntry.tsx"));
 const Classroom = lazy(() => import("./classroom/ClassroomRoute.tsx"));
+const Capture = lazy(() => import("./classroom/CaptureRoute.tsx"));
 
 export function SiteRouter() {
   const path = window.location.pathname.replace(/\/$/, "") || "/";
   const app = path === "/app";
+  const capture = participationEnabled && path === "/capture";
   const classroom =
     classroomEnabled && (path === "/classroom" || path === "/join");
   const state = editorReleaseState({
@@ -23,31 +25,35 @@ export function SiteRouter() {
     document.documentElement.lang = app ? "en" : "vi";
     document.title = isPublicPath(path)
       ? pageContent[path].title
-      : classroom
-        ? `${product.name} — ${path === "/join" ? "Tham gia lớp học" : "GroupHub"}`
-        : app
-          ? `${product.name} — Bảng giảng`
-          : `${product.name} — Không tìm thấy trang`;
+      : capture
+        ? `${product.name} — Gửi ảnh lên bảng`
+        : classroom
+          ? `${product.name} — ${path === "/join" ? "Tham gia lớp học" : "GroupHub"}`
+          : app
+            ? `${product.name} — Bảng giảng`
+            : `${product.name} — Không tìm thấy trang`;
     if (!isPublicPath(path))
       document
         .querySelector('meta[name="robots"]')
         ?.setAttribute("content", "noindex, nofollow, noarchive");
-  }, [path, app, classroom]);
+  }, [path, app, classroom, capture]);
   if (path === "/")
     return <LandingPage editorAvailable={state !== "unavailable"} />;
   if (isPublicPath(path) && path !== "/")
     return <InfoPage path={path} available={state !== "unavailable"} />;
-  if (classroom) {
+  if (classroom || capture) {
     return (
       <LoadBoundary>
         <Suspense
           fallback={
             <main className="route-notice" lang="vi">
-              <h1>Đang mở GroupHub…</h1>
+              <h1>
+                {capture ? "Đang mở trang gửi ảnh…" : "Đang mở GroupHub…"}
+              </h1>
             </main>
           }
         >
-          <Classroom student={path === "/join"} />
+          {capture ? <Capture /> : <Classroom student={path === "/join"} />}
         </Suspense>
       </LoadBoundary>
     );

@@ -16,11 +16,13 @@ export type RoomRow = {
 };
 
 type Scope = {
-  actor: "teacher" | "participant" | "invite";
+  actor: "teacher" | "participant" | "invite" | "capture" | "capture-redeem" | "capture-session";
   actorId?: string;
   roomId?: string;
   inviteHash?: string;
   joinKey?: string;
+  captureHash?: string;
+  captureGrantId?: string;
 };
 
 export async function transaction<T>(
@@ -56,13 +58,17 @@ export async function setScope(db: PoolClient, scope: Scope) {
       set_config('classroom.actor_id', $2, true),
       set_config('classroom.room_id', $3, true),
       set_config('classroom.invite_hash', $4, true),
-      set_config('classroom.join_key', $5, true)`,
+      set_config('classroom.join_key', $5, true),
+      set_config('classroom.capture_hash', $6, true),
+      set_config('classroom.capture_grant_id', $7, true)`,
     [
       scope.actor,
       scope.actorId ?? "",
       scope.roomId ?? "",
       scope.inviteHash ?? "",
       scope.joinKey ?? "",
+      scope.captureHash ?? "",
+      scope.captureGrantId ?? "",
     ],
   );
 }
@@ -119,7 +125,8 @@ export async function teacherRoom(
   secret: string,
 ) {
   const groups = await db.query<{ id: string; name: string }>(
-    "SELECT id, name FROM public.classroom_groups WHERE room_id = $1 ORDER BY created_at, id",
+    `SELECT g.id,g.name FROM public.classroom_groups g
+      WHERE g.room_id=$1 AND to_jsonb(g)->>'removed_at' IS NULL ORDER BY g.created_at,g.id`,
     [row.id],
   );
   const roster = await db.query<{

@@ -3,7 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type { Pool } from "pg";
 import { digestSecret, newSecret, validSecret } from "./security.ts";
 
-type Cookie = "oauth" | "teacher" | "participant";
+type Cookie = "oauth" | "teacher" | "participant" | "capture";
 type Database = Pick<Pool, "query">;
 
 export type Entitlement = "active" | "trial" | "expired" | "suspended" | "unknown";

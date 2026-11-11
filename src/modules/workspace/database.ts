@@ -9,6 +9,16 @@ export type StoredLesson = {
   updatedAt: number;
 };
 export type Checkpoint = StoredLesson & { lessonId: string };
+export type BoardInsertionTarget = {
+  lessonId: string;
+  surface: "main" | "scratchpad";
+  pageId: string;
+};
+export type BoardInsertionRecord = BoardInsertionTarget & {
+  id: string;
+  shapeId: string;
+};
+export type BoardInsertionReceipt = BoardInsertionRecord & { revision: number };
 export type Lease = {
   key: string;
   owner: string;
@@ -27,7 +37,7 @@ const LEGACY_WRITER_FENCE: Lease = {
 export class WorkspaceDatabase extends Dexie {
   lessons!: Table<StoredLesson, string>;
   checkpoints!: Table<Checkpoint, [string, number]>;
-  meta!: Table<{ key: string; lessonId: string }, string>;
+  meta!: Table<{ key: string; lessonId: string; insertion?: BoardInsertionReceipt }, string>;
   leases!: Table<Lease, string>;
   pdfSources!: Table<{ id: string; bytes: Uint8Array }, string>;
   documentSources!: Table<{ id: string; bytes: Uint8Array }, string>;

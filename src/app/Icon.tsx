@@ -4,6 +4,7 @@ const paths = {
   text: "M4 5h16M12 5v15M8 20h8",
   equation: "M20 4H8l6 8-6 8h12M4 8H2m2 8H2",
   image: "M3 4h18v16H3V4Zm0 12 5-5 5 5 3-3 5 5M16 8h.01",
+  camera: "M3 7h4l2-3h6l2 3h4v13H3V7Zm12 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z",
   pen: "m4 16 1 4 4-1L20 8l-5-5L4 16Zm9-11 5 5M5 16l4 4",
   highlight: "m4 14 7-10 7 5-8 9-6-4Zm0 0-1 6h6l1-2M14 3l6 4",
   erase:
@@ -44,6 +45,7 @@ const paths = {
   stop: "M6 6h12v12H6Z",
   people:
     "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-4m-6-6a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm4-4a4 4 0 0 1 0 8",
+  caller: "M5 18v-1a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v1M13 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm5 1 1 2 2 .5-1.5 1.5.3 2-1.8-.9-1.8.9.3-2L15 10.5l2-.5Z",
   settings: "M4 6h7m4 0h5M4 12h3m4 0h9M4 18h10m4 0h2M11 4v4m-4 2v4m7 2v4",
   more: "M5 12h.01m7 0h.01m7 0h.01",
   chevron: "m7 10 5 5 5-5",

@@ -5,6 +5,7 @@ import type {
   CommitReceipt,
 } from "../workspace/local-workspace.ts";
 import { SaveCoordinator } from "../workspace/save-coordinator.ts";
+import type { BoardInsertionRecord } from "../workspace/database.ts";
 import {
   hydrateSurface,
   validateLesson,
@@ -76,6 +77,7 @@ export class LessonSession {
   #generation = 0;
   #ownershipDispose: () => void;
   #retired = new Set<string>();
+  #boardInsertions = new Map<string, BoardInsertionRecord>();
   #wordDraft: DocumentModel | null;
   wordSources: DocumentSources;
   interactiveSources: InteractiveSources;
@@ -105,10 +107,18 @@ export class LessonSession {
       canSave: () => [...this.engines.values()].every((e) => !e.isPointing()),
       write: async (value) => {
         try {
-          return (this.lastCommit = await workspace.save(
+          const insertions = [...this.#boardInsertions.values()].filter((entry) => {
+            const drawing = entry.surface === "main" ? value.document : value.scratchpad.document;
+            return entry.lessonId === workspace.lesson.id &&
+              !!drawing.store[entry.shapeId as keyof typeof drawing.store];
+          });
+          this.lastCommit = await workspace.save(
             value,
             workspace.lesson.revision,
-          ));
+            insertions,
+          );
+          for (const entry of insertions) this.#boardInsertions.delete(entry.id);
+          return this.lastCommit;
         } catch (error) {
           if (workspace.readOnly)
             for (const e of this.engines.values()) e.syncReadOnly();
@@ -137,6 +147,14 @@ export class LessonSession {
   }
   notify(message: string) {
     this.#publish({ message });
+  }
+  async commitBoardInsertion(insertion: BoardInsertionRecord) {
+    this.#boardInsertions.set(insertion.id, insertion);
+    this.saving.request();
+    await this.saving.flush();
+    const receipt = await this.workspace.boardInsertion(insertion.id);
+    if (!receipt) throw new Error("Ảnh hoặc tên đã chèn nhưng chưa lưu xong trên thiết bị. Hãy thử lại.");
+    return receipt;
   }
   getWordDraft() {
     return this.#wordDraft;
@@ -550,6 +568,7 @@ export class LessonSession {
       this.interactiveSources = lesson.interactiveSources ?? {};
       this.#view = structuredClone(lesson.view);
       this.#retired.clear();
+      this.#boardInsertions.clear();
       this.pdf.close();
       this.pdf = new PdfRuntime();
       for (const [id, password] of Object.entries(pdfPasswords))

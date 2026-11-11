@@ -15,12 +15,12 @@ const mime: Record<string, string> = {
   ".webp": "image/webp",
 };
 
-export async function registerClassroomSite(app: FastifyInstance, directory: string) {
+export async function registerClassroomSite(app: FastifyInstance, directory: string, captureEnabled = false) {
   const root = resolve(directory);
   const shell = await readFile(resolve(root, "classroom.html"));
   const pageHeaders = {
     "Cache-Control": "private, no-store",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
     "Referrer-Policy": "no-referrer",
     "X-Content-Type-Options": "nosniff",
@@ -31,6 +31,14 @@ export async function registerClassroomSite(app: FastifyInstance, directory: str
     app.get(route, async (_request, reply) =>
       reply.headers(pageHeaders).type("text/html; charset=utf-8").send(shell),
     );
+  }
+  if (captureEnabled) {
+    for (const route of ["/capture", "/capture/"]) {
+      app.get(route, async (_request, reply) => reply.headers({
+        ...pageHeaders,
+        "Permissions-Policy": "camera=(self), microphone=(), geolocation=(), payment=()",
+      }).type("text/html; charset=utf-8").send(shell));
+    }
   }
   app.get("/", async (_request, reply) => reply.redirect("/classroom"));
   app.get("/app", async (_request, reply) => reply.redirect(product.siteUrl + "/app"));
