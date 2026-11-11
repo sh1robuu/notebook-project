@@ -11,6 +11,8 @@ import { storageError } from "./contracts.ts";
 import { WriterLease } from "./writer-lease.ts";
 import { digest, makeLesson, validateLesson, WorkspaceError } from "./model.ts";
 import type { Lesson } from "./model.ts";
+import { defaultNotebookPaper } from "./lesson-view.ts";
+import { devicePreferences } from "./preferences.ts";
 import {
   serializedLesson,
   hydrateSources,
@@ -36,6 +38,11 @@ function blank() {
     id: PageRecordType.createId("page"),
     name: "Page 1",
     index: "a1" as never,
+    meta: {
+      paper: defaultNotebookPaper(
+        devicePreferences.getSnapshot().value.paperColor,
+      ),
+    },
   });
   return makeLesson({
     schema: createTLSchema().serialize(),

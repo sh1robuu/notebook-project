@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import type { BoardEngine } from "../modules/board/engine.ts";
 import type { Lesson } from "../modules/workspace/model.ts";
 import {
@@ -222,7 +223,13 @@ export function LessonFiles({ engine }: { engine: BoardEngine }) {
   function cancel() {
     dialog.current?.close();
     setCandidate(null);
-    openButton.current?.focus();
+    const trigger = openButton.current;
+    if (trigger?.getClientRects().length) trigger.focus();
+    else
+      trigger
+        ?.closest(".adaptive-tools")
+        ?.querySelector<HTMLButtonElement>(".adaptive-trigger")
+        ?.focus();
   }
   async function restore() {
     if (!candidate || fileOperation.current) return;
@@ -238,9 +245,7 @@ export function LessonFiles({ engine }: { engine: BoardEngine }) {
         );
       if (candidate.kind === "previous") await engine.restorePrevious();
       else {
-        await engine.restore(candidate.lesson);
-        for (const [id, p] of Object.entries(candidate.passwords ?? {}))
-          engine.session.pdf.setPassword(id, p);
+        await engine.restore(candidate.lesson, candidate.passwords);
       }
       cancel();
       setMessage(
@@ -283,6 +288,7 @@ export function LessonFiles({ engine }: { engine: BoardEngine }) {
         <button
           ref={openButton}
           aria-label="Open lesson"
+          title="Open lesson"
           disabled={busy || state.readOnly}
           onClick={() => input.current?.click()}
         >
@@ -292,6 +298,7 @@ export function LessonFiles({ engine }: { engine: BoardEngine }) {
         <button
           className="primary"
           aria-label="Download lesson"
+          title="Download lesson (Ctrl/Cmd+S)"
           disabled={busy}
           onClick={() => void download()}
         >
@@ -299,165 +306,171 @@ export function LessonFiles({ engine }: { engine: BoardEngine }) {
           <span>Download lesson</span>
         </button>
       </div>
-      <dialog
-        ref={passwordDialog}
-        aria-labelledby="archive-password-title"
-        onCancel={() => checking.current?.abort()}
-      >
-        <h2 id="archive-password-title">Unlock archived PDF</h2>
-        <p>{passwordQuestion}</p>
-        <p>Password stays in memory for this session.</p>
-        <form
-          onSubmit={(ev) => {
-            ev.preventDefault();
-            const answer = passwordAnswer.current;
-            passwordAnswer.current = null;
-            setPasswordQuestion("");
-            answer?.(password);
-            setPassword("");
-          }}
-        >
-          <label>
-            Archived PDF password
-            <input
-              type="password"
-              autoComplete="off"
-              value={password}
-              onChange={(ev) => setPassword(ev.target.value)}
-            />
-          </label>
-          <div className="dialog-actions">
-            <button type="button" onClick={() => checking.current?.abort()}>
-              Cancel archive check
-            </button>
-            <button type="submit">Continue archive check</button>
-          </div>
-        </form>
-      </dialog>
-      <input
-        ref={input}
-        type="file"
-        hidden
-        aria-label="Lesson file"
-        accept=".teachboard,application/zip"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (file) void choose(file);
-        }}
-      />
-      {message ? (
-        <div className="file-message" role="status">
-          {message}
-        </div>
-      ) : null}
-      {error && !candidate ? (
-        <div className="file-message file-error" role="alert">
-          {error}
-        </div>
-      ) : null}
-      {candidate ? (
-        <dialog
-          ref={dialog}
-          aria-labelledby="open-title"
-          onCancel={(e) => {
-            e.preventDefault();
-            if (!busy) cancel();
-          }}
-        >
-          <h2 id="open-title">Open this lesson?</h2>
-          <p className="dialog-title">
-            {candidate.lesson.title || "Untitled lesson"}
-          </p>
-          <p>
-            {(
-              candidate.info?.mainObjects ??
-              Object.values(candidate.lesson.document.store).filter(
-                (r) => r.typeName === "shape",
-              ).length
-            ).toLocaleString()}{" "}
-            objects ·{" "}
-            {candidate.info?.mainPages ??
-              Object.values(candidate.lesson.document.store).filter(
-                (r) => r.typeName === "page",
-              ).length}{" "}
-            main pages
-          </p>
-          <p>
-            Your current work will be saved first. Use Previous lesson to return
-            to it.
-          </p>
-          {candidate.kind === "archive" ? (
-            <>
-              <p>
-                Tệp này sẽ được mở thành một bài giảng mới trên thiết bị. Bài
-                giảng đang dùng được giữ lại.
-              </p>
-              {candidate.info ? (
-                <dl className="archive-details">
-                  <dt>Định dạng bản sao</dt>
-                  <dd>teachboard {candidate.info.formatVersion}</dd>
-                  <dt>Phiên bản tạo tệp</dt>
-                  <dd>
-                    {candidate.info.applicationVersion ??
-                      "Tệp cũ chưa ghi thông tin"}
-                  </dd>
-                  {candidate.info.createdAt ? (
-                    <>
-                      <dt>Ngày tạo bản sao</dt>
-                      <dd>
-                        <time dateTime={candidate.info.createdAt}>
-                          {new Date(candidate.info.createdAt).toLocaleString(
-                            "vi-VN",
-                          )}
-                        </time>
-                      </dd>
-                    </>
-                  ) : null}
-                  <dt>Nội dung khung nháp</dt>
-                  <dd>
-                    {candidate.info.scratchpadObjects.toLocaleString()} đối
-                    tượng
-                  </dd>
-                  <dt>Tệp nguồn</dt>
-                  <dd>
-                    {candidate.info.sourceCount.toLocaleString()} tệp ·{" "}
-                    {candidate.info.sourceBytes.toLocaleString()} byte
-                  </dd>
-                </dl>
-              ) : null}
-              {candidate.info?.warnings.length ? (
-                <ul>
-                  {candidate.info.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
-              ) : null}
-              <p>
-                Các tùy chọn riêng của thiết bị không được thay đổi khi mở bản
-                sao.
-              </p>
-            </>
-          ) : null}
-          {error ? (
-            <p role="alert" className="dialog-error">
-              {error}
-            </p>
-          ) : null}
-          <div className="dialog-actions">
-            <button onClick={cancel} disabled={busy}>
-              Cancel
-            </button>
-            <button
-              className="primary"
-              onClick={() => void restore()}
-              disabled={busy}
+      {createPortal(
+        <>
+          <dialog
+            ref={passwordDialog}
+            aria-labelledby="archive-password-title"
+            onCancel={() => checking.current?.abort()}
+          >
+            <h2 id="archive-password-title">Unlock archived PDF</h2>
+            <p>{passwordQuestion}</p>
+            <p>Password stays in memory for this session.</p>
+            <form
+              onSubmit={(ev) => {
+                ev.preventDefault();
+                const answer = passwordAnswer.current;
+                passwordAnswer.current = null;
+                setPasswordQuestion("");
+                answer?.(password);
+                setPassword("");
+              }}
             >
-              {busy ? "Opening…" : "Open checked lesson"}
-            </button>
-          </div>
-        </dialog>
-      ) : null}
+              <label>
+                Archived PDF password
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={password}
+                  onChange={(ev) => setPassword(ev.target.value)}
+                />
+              </label>
+              <div className="dialog-actions">
+                <button type="button" onClick={() => checking.current?.abort()}>
+                  Cancel archive check
+                </button>
+                <button type="submit">Continue archive check</button>
+              </div>
+            </form>
+          </dialog>
+          <input
+            ref={input}
+            type="file"
+            hidden
+            aria-label="Lesson file"
+            accept=".teachboard,application/zip"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void choose(file);
+            }}
+          />
+          {message ? (
+            <div className="file-message" role="status">
+              {message}
+            </div>
+          ) : null}
+          {error && !candidate ? (
+            <div className="file-message file-error" role="alert">
+              {error}
+            </div>
+          ) : null}
+          {candidate ? (
+            <dialog
+              ref={dialog}
+              aria-labelledby="open-title"
+              onCancel={(e) => {
+                e.preventDefault();
+                if (!busy) cancel();
+              }}
+            >
+              <h2 id="open-title">Open this lesson?</h2>
+              <p className="dialog-title">
+                {candidate.lesson.title || "Untitled lesson"}
+              </p>
+              <p>
+                {(
+                  candidate.info?.mainObjects ??
+                  Object.values(candidate.lesson.document.store).filter(
+                    (r) => r.typeName === "shape",
+                  ).length
+                ).toLocaleString()}{" "}
+                objects ·{" "}
+                {candidate.info?.mainPages ??
+                  Object.values(candidate.lesson.document.store).filter(
+                    (r) => r.typeName === "page",
+                  ).length}{" "}
+                main pages
+              </p>
+              <p>
+                Your current work will be saved first. Use Previous lesson to
+                return to it.
+              </p>
+              {candidate.kind === "archive" ? (
+                <>
+                  <p>
+                    Tệp này sẽ được mở thành một bài giảng mới trên thiết bị.
+                    Bài giảng đang dùng được giữ lại.
+                  </p>
+                  {candidate.info ? (
+                    <dl className="archive-details">
+                      <dt>Định dạng bản sao</dt>
+                      <dd>teachboard {candidate.info.formatVersion}</dd>
+                      <dt>Phiên bản tạo tệp</dt>
+                      <dd>
+                        {candidate.info.applicationVersion ??
+                          "Tệp cũ chưa ghi thông tin"}
+                      </dd>
+                      {candidate.info.createdAt ? (
+                        <>
+                          <dt>Ngày tạo bản sao</dt>
+                          <dd>
+                            <time dateTime={candidate.info.createdAt}>
+                              {new Date(
+                                candidate.info.createdAt,
+                              ).toLocaleString("vi-VN")}
+                            </time>
+                          </dd>
+                        </>
+                      ) : null}
+                      <dt>Nội dung khung nháp</dt>
+                      <dd>
+                        {candidate.info.scratchpadObjects.toLocaleString()} đối
+                        tượng
+                      </dd>
+                      <dt>Tệp nguồn</dt>
+                      <dd>
+                        {candidate.info.sourceCount.toLocaleString()} tệp ·{" "}
+                        {candidate.info.sourceBytes.toLocaleString()} byte
+                      </dd>
+                    </dl>
+                  ) : null}
+                  {candidate.info?.warnings.length ? (
+                    <ul>
+                      {candidate.info.warnings.map((warning) => (
+                        <li key={warning}>{warning}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  <p>
+                    Các tùy chọn riêng của thiết bị không được thay đổi khi mở
+                    bản sao.
+                  </p>
+                </>
+              ) : null}
+              {error ? (
+                <p role="alert" className="dialog-error">
+                  {error}
+                </p>
+              ) : null}
+              <div className="dialog-actions">
+                <button onClick={cancel} disabled={busy}>
+                  Cancel
+                </button>
+                <button
+                  className="primary"
+                  onClick={() => void restore()}
+                  disabled={busy}
+                >
+                  {busy ? "Opening…" : "Open checked lesson"}
+                </button>
+              </div>
+            </dialog>
+          ) : null}
+        </>,
+        engine.pages.editor.getContainer().closest(".workspace") ??
+          document.body,
+      )}
     </>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import type { BoardEngine } from "../../modules/board/engine.ts";
 import { getWordTeaching } from "../../modules/documents/teaching.ts";
 import { orderedTeachingBlocks } from "../../modules/documents/layout.ts";
+import { Icon } from "../Icon.tsx";
 export function TeachingControls({ engine }: { engine: BoardEngine }) {
   const controller = getWordTeaching(engine.pages.editor);
   const state = useSyncExternalStore(
@@ -69,22 +70,34 @@ export function TeachingControls({ engine }: { engine: BoardEngine }) {
       ) : (
         <>
           <button
+            type="button"
+            className="context-icon"
+            aria-label="Reveal previous"
+            title="Reveal previous"
             onClick={controller.previous}
             disabled={!state.visibleIds.length}
           >
-            Reveal previous
+            <Icon name="previousBuild" />
           </button>
           <button
+            type="button"
+            className="context-icon"
+            aria-label="Reveal next"
+            title="Reveal next"
             onClick={controller.next}
             disabled={state.visibleIds.length === state.total}
           >
-            Reveal next
+            <Icon name="nextBuild" />
           </button>
           <button
+            type="button"
+            className="context-icon"
+            aria-label="Reveal all"
+            title="Reveal all"
             onClick={controller.revealAll}
             disabled={state.visibleIds.length === state.total}
           >
-            Reveal all
+            <Icon name="reveal" />
           </button>
           <button onClick={controller.stop}>Return to editing</button>
         </>

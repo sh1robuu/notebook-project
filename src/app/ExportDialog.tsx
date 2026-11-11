@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useValue } from "tldraw";
 import type { BoardEngine } from "../modules/board/engine.ts";
 import type { ExportOptions } from "../modules/pdf/export.ts";
@@ -146,218 +147,227 @@ export function ExportDialog({ engine }: { engine: BoardEngine }) {
       >
         Export
       </button>
-      <dialog
-        ref={dialog}
-        aria-labelledby="export-title"
-        onCancel={(ev) => {
-          ev.preventDefault();
-          cancel();
-        }}
-      >
-        <h2 id="export-title">Export</h2>
-        <div className="export-fields">
-          <label>
-            Format
-            <select
-              aria-label="Export format"
-              value={options.format}
-              disabled={busy}
-              onChange={(ev) =>
-                update({
-                  format: ev.target.value as "png" | "pdf",
-                  scope: "current",
-                })
-              }
-            >
-              <option value="png">PNG image</option>
-              <option value="pdf">PDF document</option>
-            </select>
-          </label>
-          <label>
-            Scope
-            <select
-              aria-label="Export scope"
-              value={options.scope}
-              disabled={busy}
-              onChange={(ev) =>
-                update({ scope: ev.target.value as ExportOptions["scope"] })
-              }
-            >
-              <option value="current">
-                Current main page · full finite paper
-              </option>
-              {options.format === "pdf" ? (
-                <>
-                  <option value="range">Main page range</option>
-                  <option value="all">All main pages</option>
-                </>
-              ) : (
-                <>
-                  <option value="selection">Selected main objects</option>
-                  <option value="region">Numeric main region</option>
-                </>
-              )}
-              <option value="scratchpad">Scratchpad only</option>
-            </select>
-          </label>
-          {options.scope === "range" ? (
+      {createPortal(
+        <dialog
+          ref={dialog}
+          className="context-panel context-panel-edge export-panel"
+          aria-labelledby="export-title"
+          onCancel={(ev) => {
+            ev.preventDefault();
+            cancel();
+          }}
+        >
+          <header className="context-panel-heading">
+            <h2 id="export-title">Export</h2>
+          </header>
+          <div className="export-fields">
             <label>
-              Page range
-              <input
-                aria-label="Export page range"
-                value={options.range}
+              Format
+              <select
+                aria-label="Export format"
+                value={options.format}
                 disabled={busy}
-                onChange={(ev) => update({ range: ev.target.value })}
-              />
+                onChange={(ev) =>
+                  update({
+                    format: ev.target.value as "png" | "pdf",
+                    scope: "current",
+                  })
+                }
+              >
+                <option value="png">PNG image</option>
+                <option value="pdf">PDF document</option>
+              </select>
             </label>
-          ) : null}
-          {options.scope === "region" ? (
-            <fieldset>
-              <legend>World coordinates</legend>
-              {(["x", "y", "w", "h"] as const).map((key) => (
-                <label key={key}>
-                  {key}
-                  <input
-                    aria-label={"Region " + key}
-                    type="number"
-                    value={options.region[key]}
-                    disabled={busy}
-                    onChange={(ev) =>
-                      update({
-                        region: {
-                          ...options.region,
-                          [key]: ev.target.valueAsNumber,
-                        },
-                      })
-                    }
-                  />
-                </label>
-              ))}
-            </fieldset>
-          ) : null}
-          {options.format === "pdf" && options.scope !== "scratchpad" ? (
+            <label>
+              Scope
+              <select
+                aria-label="Export scope"
+                value={options.scope}
+                disabled={busy}
+                onChange={(ev) =>
+                  update({ scope: ev.target.value as ExportOptions["scope"] })
+                }
+              >
+                <option value="current">
+                  Current main page · full finite paper
+                </option>
+                {options.format === "pdf" ? (
+                  <>
+                    <option value="range">Main page range</option>
+                    <option value="all">All main pages</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="selection">Selected main objects</option>
+                    <option value="region">Numeric main region</option>
+                  </>
+                )}
+                <option value="scratchpad">Scratchpad only</option>
+              </select>
+            </label>
+            {options.scope === "range" ? (
+              <label>
+                Page range
+                <input
+                  aria-label="Export page range"
+                  value={options.range}
+                  disabled={busy}
+                  onChange={(ev) => update({ range: ev.target.value })}
+                />
+              </label>
+            ) : null}
+            {options.scope === "region" ? (
+              <fieldset>
+                <legend>World coordinates</legend>
+                {(["x", "y", "w", "h"] as const).map((key) => (
+                  <label key={key}>
+                    {key}
+                    <input
+                      aria-label={"Region " + key}
+                      type="number"
+                      value={options.region[key]}
+                      disabled={busy}
+                      onChange={(ev) =>
+                        update({
+                          region: {
+                            ...options.region,
+                            [key]: ev.target.valueAsNumber,
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+              </fieldset>
+            ) : null}
+            {options.format === "pdf" && options.scope !== "scratchpad" ? (
+              <label>
+                <input
+                  type="checkbox"
+                  disabled={busy}
+                  checked={options.includeScratch}
+                  onChange={(ev) =>
+                    update({ includeScratch: ev.target.checked })
+                  }
+                />
+                Append scratchpad explicitly
+              </label>
+            ) : null}
             <label>
               <input
                 type="checkbox"
                 disabled={busy}
-                checked={options.includeScratch}
-                onChange={(ev) => update({ includeScratch: ev.target.checked })}
+                checked={options.background}
+                onChange={(ev) => update({ background: ev.target.checked })}
               />
-              Append scratchpad explicitly
+              {paper.kind === "pptx"
+                ? "Include slide / paper background"
+                : "Include PDF / paper background"}
             </label>
-          ) : null}
-          <label>
-            <input
-              type="checkbox"
-              disabled={busy}
-              checked={options.background}
-              onChange={(ev) => update({ background: ev.target.checked })}
-            />
-            {paper.kind === "pptx"
-              ? "Include slide / paper background"
-              : "Include PDF / paper background"}
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              disabled={busy}
-              checked={options.annotations}
-              onChange={(ev) => update({ annotations: ev.target.checked })}
-            />
-            Include editable annotations
-          </label>
-          {options.format === "png" ? (
             <label>
-              Resolution
-              <select
-                aria-label="Export resolution"
-                value={options.scale}
+              <input
+                type="checkbox"
                 disabled={busy}
-                onChange={(ev) => update({ scale: Number(ev.target.value) })}
-              >
-                <option value={1}>1 pixel / world unit</option>
-                <option value={2}>2 pixels / world unit</option>
-                <option value={3}>3 pixels / world unit</option>
-              </select>
+                checked={options.annotations}
+                onChange={(ev) => update({ annotations: ev.target.checked })}
+              />
+              Include editable annotations
             </label>
-          ) : null}
-          {paper.kind === "pptx" &&
-          options.background &&
-          options.scope !== "scratchpad" ? (
-            <label>
-              PowerPoint build state
-              <select
-                disabled={busy}
-                value={currentBuild ? "current" : "all"}
-                onChange={(event) =>
-                  setCurrentBuild(event.target.value === "current")
-                }
-              >
-                <option value="all">All supported builds</option>
-                <option value="current">Current build (active slide)</option>
-              </select>
-            </label>
-          ) : null}
-        </div>
-        <p>
-          Exports capture the page when you select Prepare export. Controls and
-          laser marks are left out. PNGs have a solid background. Exported files
-          are not encrypted and do not retain the original file's signatures or
-          permissions. Word pages include all content, even parts not yet shown
-          while teaching. Keep a .teachboard file to edit your work later;
-          exporting to DOCX is not supported.
-        </p>
-        {paper.kind === "pptx" ? (
-          <p>
-            PowerPoint slides are exported as still images. Other slides in a
-            selected range include all supported builds.
-          </p>
-        ) : null}
-        {options.format === "pdf" ? (
-          <p>
-            Original PDF text stays searchable where supported. Added text,
-            equations and some graphics are exported as images. Some annotated
-            PDF pages are also flattened to images. Forms, links and scripts are
-            not included, and scanned text is not made searchable.
-          </p>
-        ) : null}
-        {progress ? <p role="status">{progress}</p> : null}
-        {missingPreviews.length ? (
-          <div role="alert">
-            <p>
-              Chưa có ảnh tĩnh cho {missingPreviews.length} mô phỏng. Bạn có thể
-              xuất với thẻ tên, hoặc quay lại để thêm ảnh minh họa.
-            </p>
-            <ul>
-              {missingPreviews.slice(0, 8).map((title, index) => (
-                <li key={index}>{title}</li>
-              ))}
-              {missingPreviews.length > 8 ? (
-                <li>Và {missingPreviews.length - 8} mô phỏng khác</li>
-              ) : null}
-            </ul>
+            {options.format === "png" ? (
+              <label>
+                Resolution
+                <select
+                  aria-label="Export resolution"
+                  value={options.scale}
+                  disabled={busy}
+                  onChange={(ev) => update({ scale: Number(ev.target.value) })}
+                >
+                  <option value={1}>1 pixel / world unit</option>
+                  <option value={2}>2 pixels / world unit</option>
+                  <option value={3}>3 pixels / world unit</option>
+                </select>
+              </label>
+            ) : null}
+            {paper.kind === "pptx" &&
+            options.background &&
+            options.scope !== "scratchpad" ? (
+              <label>
+                PowerPoint build state
+                <select
+                  disabled={busy}
+                  value={currentBuild ? "current" : "all"}
+                  onChange={(event) =>
+                    setCurrentBuild(event.target.value === "current")
+                  }
+                >
+                  <option value="all">All supported builds</option>
+                  <option value="current">Current build (active slide)</option>
+                </select>
+              </label>
+            ) : null}
           </div>
-        ) : null}
-        {error ? (
-          <p className="dialog-error" role="alert">
-            {error}
+          <p>
+            Exports capture the page when you select Prepare export. Controls
+            and laser marks are left out. PNGs have a solid background. Exported
+            files are not encrypted and do not retain the original file's
+            signatures or permissions. Word pages include all content, even
+            parts not yet shown while teaching. Keep a .teachboard file to edit
+            your work later; exporting to DOCX is not supported.
           </p>
-        ) : null}
-        <div className="dialog-actions">
-          <button onClick={cancel}>{busy ? "Cancel export" : "Close"}</button>
-          <button
-            className="primary"
-            disabled={busy}
-            onClick={() => void prepare(missingPreviews.length > 0)}
-          >
-            {busy
-              ? "Preparing…"
-              : missingPreviews.length
-                ? "Xuất với thẻ tên"
-                : "Prepare export"}
-          </button>
-        </div>
-      </dialog>
+          {paper.kind === "pptx" ? (
+            <p>
+              PowerPoint slides are exported as still images. Other slides in a
+              selected range include all supported builds.
+            </p>
+          ) : null}
+          {options.format === "pdf" ? (
+            <p>
+              Original PDF text stays searchable where supported. Added text,
+              equations and some graphics are exported as images. Some annotated
+              PDF pages are also flattened to images. Forms, links and scripts
+              are not included, and scanned text is not made searchable.
+            </p>
+          ) : null}
+          {progress ? <p role="status">{progress}</p> : null}
+          {missingPreviews.length ? (
+            <div role="alert">
+              <p>
+                Chưa có ảnh tĩnh cho {missingPreviews.length} mô phỏng. Bạn có
+                thể xuất với thẻ tên, hoặc quay lại để thêm ảnh minh họa.
+              </p>
+              <ul>
+                {missingPreviews.slice(0, 8).map((title, index) => (
+                  <li key={index}>{title}</li>
+                ))}
+                {missingPreviews.length > 8 ? (
+                  <li>Và {missingPreviews.length - 8} mô phỏng khác</li>
+                ) : null}
+              </ul>
+            </div>
+          ) : null}
+          {error ? (
+            <p className="dialog-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <div className="dialog-actions">
+            <button onClick={cancel}>{busy ? "Cancel export" : "Close"}</button>
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() => void prepare(missingPreviews.length > 0)}
+            >
+              {busy
+                ? "Preparing…"
+                : missingPreviews.length
+                  ? "Xuất với thẻ tên"
+                  : "Prepare export"}
+            </button>
+          </div>
+        </dialog>,
+        engine.pages.editor.getContainer().closest(".workspace") ??
+          document.body,
+      )}
     </>
   );
 }

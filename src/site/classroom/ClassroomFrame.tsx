@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Icon } from "../../app/Icon.tsx";
 import { product } from "../../config/product.ts";
 import type { RoomMode, RoomState } from "../../modules/classroom/api.ts";
 import type { RoomConnection } from "../../modules/classroom/events.ts";
@@ -30,18 +31,26 @@ export function ClassroomFrame({
   children: ReactNode;
 }) {
   return (
-    <div className="classroom" data-ui>
+    <div className="classroom" data-student={student ? "" : undefined}>
       <a className="skip-link" href="#classroom-main">
         Đến nội dung
       </a>
       <header className="classroom-bar">
-        <a className="wordmark" href="/">
-          <img src="/mark.svg" width={30} height={30} alt="" />
-          {product.name}
-        </a>
+        <div className="classroom-brand">
+          <a className="wordmark" href="/">
+            <img src="/mark.svg" width={22} height={22} alt="" />
+            <span>{product.name}</span>
+          </a>
+          {!student && <h1>GroupHub</h1>}
+        </div>
         {(!student || account) && (
           <nav aria-label="Lối tắt">
-            {!student && <a href="/app">Bảng giảng</a>}
+            {!student && (
+              <a href="/app" className="classroom-back">
+                <Icon name="previousBuild" />
+                Bảng giảng
+              </a>
+            )}
             {account}
           </nav>
         )}
@@ -50,6 +59,40 @@ export function ClassroomFrame({
         {children}
       </main>
     </div>
+  );
+}
+
+export function ClassroomDisclosure({
+  className,
+  label,
+  accessibleName,
+  children,
+}: {
+  className?: string;
+  label: ReactNode;
+  accessibleName?: string;
+  children: ReactNode;
+}) {
+  return (
+    <details
+      className={className}
+      onKeyDown={(event) => {
+        const disclosure = event.currentTarget;
+        if (
+          event.key !== "Escape" ||
+          event.defaultPrevented ||
+          !disclosure.open
+        )
+          return;
+        event.preventDefault();
+        event.stopPropagation();
+        disclosure.open = false;
+        disclosure.querySelector("summary")?.focus();
+      }}
+    >
+      <summary aria-label={accessibleName}>{label}</summary>
+      {children}
+    </details>
   );
 }
 

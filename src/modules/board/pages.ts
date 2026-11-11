@@ -2,9 +2,13 @@ import { Box, PageRecordType, getIndexBetween } from "tldraw";
 import type { Editor, TLPageId } from "tldraw";
 import type { BoardEngine } from "./engine.ts";
 import { MAX_PAGES, validateLesson } from "../workspace/model.ts";
-import { defaultPaper, validatePaper } from "../workspace/lesson-view.ts";
+import {
+  defaultNotebookPaper,
+  validatePaper,
+} from "../workspace/lesson-view.ts";
 import type { Paper } from "../workspace/lesson-view.ts";
 import { devicePreferences } from "../workspace/preferences.ts";
+import { paperGuideSvg } from "./paper-guides.ts";
 export const paperColors = {
   white: "#ffffff",
   dark: "#20272d",
@@ -34,6 +38,23 @@ export class PageController {
       i = pages.findIndex((p) => p.id === this.editor.getCurrentPageId());
     if (pages[i + delta]) this.navigate(pages[i + delta].id);
   }
+  fitWidth() {
+    const editor = this.editor;
+    editor.updateViewportScreenBounds(editor.getContainer());
+    const { w: width } = editor.getViewportScreenBounds();
+    if (width < 64) return;
+    const paper = validatePaper(editor.getCurrentPage().meta.paper);
+    const padding = 12;
+    const zoom = Math.max(
+      0.25,
+      Math.min(4, (width - padding * 2) / paper.width),
+    );
+    editor.setCamera({
+      x: (width / zoom - paper.width) / 2,
+      y: padding / zoom,
+      z: zoom,
+    });
+  }
   add() {
     if (!this.writable || this.editor.getPages().length >= MAX_PAGES) return;
     this.engine.session.activate("main");
@@ -41,10 +62,11 @@ export class PageController {
     const id = PageRecordType.createId();
     this.editor.markHistoryStoppingPoint("Add page");
     this.editor.run(() => {
-      this.editor.createPage({ id, meta: { paper: {
-        ...defaultPaper(),
-        color: devicePreferences.getSnapshot().value.paperColor,
-      } } });
+      const color = devicePreferences.getSnapshot().value.paperColor;
+      this.editor.createPage({
+        id,
+        meta: { paper: defaultNotebookPaper(color) },
+      });
       this.editor.setCurrentPage(id);
     });
   }
@@ -250,14 +272,32 @@ export class PagePreviews {
           const b = this.editor.getShapePageBounds(shape);
           if (b) bounds.union(b);
         }
-        const result = ids.length
-          ? await this.editor.getSvgString(ids, {
+        let result: Awaited<ReturnType<Editor["getSvgString"]>> | undefined;
+        if (ids.length) {
+          // The SDK lays out a temporary SVG inside the live board. Keep that
+          // export staging tree out of assistive navigation while it renders.
+          const container = this.editor.getContainer();
+          const staging = new MutationObserver((entries) => {
+            for (const entry of entries)
+              for (const node of entry.addedNodes)
+                if (
+                  node instanceof Element &&
+                  node.classList.contains("tldraw-svg-export")
+                )
+                  node.setAttribute("aria-hidden", "true");
+          });
+          staging.observe(container, { childList: true });
+          try {
+            result = await this.editor.getSvgString(ids, {
               bounds,
               padding: 0,
               background: false,
               scale: Math.min(1, 240 / bounds.w),
-            })
-          : undefined;
+            });
+          } finally {
+            staging.disconnect();
+          }
+        }
         if (
           this.#closed ||
           signal?.aborted ||
@@ -280,6 +320,20 @@ export class PagePreviews {
         }))
           rect.setAttribute(k, String(v));
         doc.documentElement.prepend(rect);
+        const guides = paperGuideSvg(paper);
+        if (guides) {
+          const template = new DOMParser().parseFromString(
+            guides,
+            "image/svg+xml",
+          );
+          const layer = doc.createElementNS("http://www.w3.org/2000/svg", "g");
+          layer.append(
+            ...Array.from(template.documentElement.children, (node) =>
+              doc.importNode(node, true),
+            ),
+          );
+          rect.after(layer);
+        }
         if (paper.kind !== "blank" && this.background) {
           const href = await this.background(paper, signal);
           if (this.#closed || signal?.aborted) return;

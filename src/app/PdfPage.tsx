@@ -13,6 +13,7 @@ import type { BoardEngine } from "../modules/board/engine.ts";
 import type { Paper } from "../modules/workspace/lesson-view.ts";
 import { validatePaper } from "../modules/workspace/lesson-view.ts";
 import { pdfTask } from "../modules/pdf/runtime.ts";
+import { Icon } from "./Icon.tsx";
 export const PdfSessionContext = createContext<LessonSession | null>(null);
 export function PdfCanvas({ paper, zoom }: { paper: Paper; zoom: number }) {
   const session = useContext(PdfSessionContext),
@@ -130,19 +131,23 @@ export function PdfControls({ engine }: { engine: BoardEngine }) {
   }
   return (
     <div className="pdf-controls" role="group" aria-label="PDF controls">
-      <span>
+      <span title={`${source.name} · source page ${paper.pageIndex! + 1}`}>
         {source.name} · source page {paper.pageIndex! + 1}
       </span>
       <button onClick={() => session.setReading(!ui.reading)}>
         {ui.reading ? "Annotate PDF" : "Read PDF text"}
       </button>
       <button
+        type="button"
+        className="context-icon"
+        aria-label="Fit PDF page"
+        title="Fit PDF page"
         onClick={() => {
           e.updateViewportScreenBounds(e.getContainer());
           e.zoomToBounds(new Box(0, 0, paper.width, paper.height));
         }}
       >
-        Fit PDF page
+        <Icon name="fit" />
       </button>
       {source.encrypted ? (
         <button
@@ -167,13 +172,16 @@ export function PdfControls({ engine }: { engine: BoardEngine }) {
       ) : null}
       <dialog
         ref={dialog}
+        className="context-panel context-panel-edge document-import-panel"
         aria-labelledby="unlock-pdf-title"
         onCancel={() => {
           setSecret("");
           setUnlock(false);
         }}
       >
-        <h2 id="unlock-pdf-title">Unlock PDF</h2>
+        <header className="context-panel-heading">
+          <h2 id="unlock-pdf-title">Unlock PDF</h2>
+        </header>
         <p>The password stays in memory until this lesson closes.</p>
         <label>
           PDF password

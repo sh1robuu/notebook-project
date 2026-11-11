@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { Icon } from "../../app/Icon.tsx";
 import {
   ClassroomError,
   classroomApi,
@@ -31,6 +32,9 @@ export function TeacherRooms({
   const [rooms, setRooms] = useState<RoomSummary[] | null>(null);
   const [roomId, setRoomId] = useState(roomInUrl);
   const [creating, setCreating] = useState(false);
+  const [roomMenuOpen, setRoomMenuOpen] = useState(false);
+  const roomMenu = useId();
+  const switcher = useRef<HTMLButtonElement>(null);
   const [reload, setReload] = useState(0);
   const [loadError, setLoadError] = useState("");
   const creation = useCommittedCommand(accessLost);
@@ -57,6 +61,11 @@ export function TeacherRooms({
     const url = new URL(location.href);
     url.searchParams.set("room", id);
     history.replaceState(null, "", url);
+  }
+
+  function closeRoomMenu() {
+    setRoomMenuOpen(false);
+    switcher.current?.focus();
   }
 
   const summarize = useCallback((room: Room) => {
@@ -99,19 +108,39 @@ export function TeacherRooms({
   return (
     <div className="classroom-grid classroom-private">
       <aside
-        className="classroom-panel classroom-room-list"
+        className="classroom-room-list"
         aria-labelledby="classroom-rooms"
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && roomMenuOpen) {
+            event.preventDefault();
+            closeRoomMenu();
+          }
+        }}
       >
-        <h2 id="classroom-rooms">Phòng của tôi</h2>
-        <button
-          type="button"
-          className="classroom-primary"
-          aria-expanded={creating}
-          disabled={creation.busy}
-          onClick={() => setCreating(!creating)}
-        >
-          {creating ? "Đóng biểu mẫu" : "Tạo phòng"}
-        </button>
+        <div className="classroom-rail-heading">
+          <h2 id="classroom-rooms">Phòng của tôi</h2>
+          {roomId && !loadError && !!rooms?.length && (
+            <button
+              ref={switcher}
+              type="button"
+              className="classroom-room-switch"
+              aria-controls={roomMenu}
+              aria-expanded={roomMenuOpen}
+              onClick={() => setRoomMenuOpen((open) => !open)}
+            >
+              Đổi phòng
+            </button>
+          )}
+          <button
+            type="button"
+            aria-expanded={creating}
+            disabled={creation.busy}
+            onClick={() => setCreating((open) => !open)}
+          >
+            <Icon name={creating ? "close" : "plus"} />
+            {creating ? "Đóng biểu mẫu" : "Tạo phòng"}
+          </button>
+        </div>
         {creating && (
           <RoomFields
             initial={{ title: "", mode: "individual" }}
@@ -121,7 +150,8 @@ export function TeacherRooms({
           />
         )}
         <CommandNotice
-          {...creation}
+          error={creation.error}
+          busy={creation.busy}
           retry={creation.canRetry ? creation.retry : undefined}
         />
         {loadError ? (
@@ -139,13 +169,20 @@ export function TeacherRooms({
         ) : rooms.length === 0 ? (
           <p className="classroom-muted">Chưa có phòng nào.</p>
         ) : (
-          <ul className="classroom-room-menu">
+          <ul
+            className="classroom-room-menu"
+            id={roomMenu}
+            data-folded={roomId && !roomMenuOpen ? "" : undefined}
+          >
             {rooms.map((room) => (
               <li key={room.id}>
                 <button
                   type="button"
                   aria-pressed={room.id === roomId}
-                  onClick={() => select(room.id)}
+                  onClick={() => {
+                    select(room.id);
+                    if (roomMenuOpen) closeRoomMenu();
+                  }}
                 >
                   <span>{room.title}</span>
                   <small>{roomState[room.state]}</small>

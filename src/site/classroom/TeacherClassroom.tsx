@@ -8,7 +8,7 @@ import type {
   Entitlement,
   TeacherSession,
 } from "../../modules/classroom/api.ts";
-import { ClassroomFrame } from "./ClassroomFrame.tsx";
+import { ClassroomDisclosure, ClassroomFrame } from "./ClassroomFrame.tsx";
 import { TeacherRooms } from "./TeacherRooms.tsx";
 
 type Account = Extract<TeacherSession, { teacher: object }>;
@@ -44,22 +44,26 @@ export function TeacherClassroom() {
     const controller = new AbortController();
     request.current = controller;
     setState({ kind: "checking" });
-    void classroomApi.teacherSession(controller.signal).then(
-      (session) => {
-        if (controller.signal.aborted) return;
-        setState({ kind: "ready", session });
-        if (announce.current) {
-          announce.current = false;
-          if (session.teacher) channel.current?.postMessage("session-changed");
-        }
-      },
-      (error) => {
-        if (!controller.signal.aborted)
-          setState({ kind: "error", message: classroomError(error) });
-      },
-    ).finally(() => {
-      if (request.current === controller) request.current = null;
-    });
+    void classroomApi
+      .teacherSession(controller.signal)
+      .then(
+        (session) => {
+          if (controller.signal.aborted) return;
+          setState({ kind: "ready", session });
+          if (announce.current) {
+            announce.current = false;
+            if (session.teacher)
+              channel.current?.postMessage("session-changed");
+          }
+        },
+        (error) => {
+          if (!controller.signal.aborted)
+            setState({ kind: "error", message: classroomError(error) });
+        },
+      )
+      .finally(() => {
+        if (request.current === controller) request.current = null;
+      });
   }, []);
 
   useEffect(() => {
@@ -77,7 +81,8 @@ export function TeacherClassroom() {
       // Server revalidation remains authoritative when cross-tab messaging is unavailable.
     }
     const visible = () => {
-      if (document.visibilityState === "visible" && !request.current) revalidate();
+      if (document.visibilityState === "visible" && !request.current)
+        revalidate();
     };
     document.addEventListener("visibilitychange", visible);
     const refresh = setInterval(visible, 60_000);
@@ -125,10 +130,11 @@ export function TeacherClassroom() {
 
   const session = state.kind === "ready" ? state.session : undefined;
   const account = session?.teacher && (
-    <details className="classroom-account classroom-private">
-      <summary aria-label={"Tài khoản giáo viên " + session.teacher.displayName}>
-        {session.teacher.displayName}
-      </summary>
+    <ClassroomDisclosure
+      className="classroom-account classroom-private"
+      label={<span>{session.teacher.displayName}</span>}
+      accessibleName={"Tài khoản giáo viên " + session.teacher.displayName}
+    >
       <div>
         <strong>{session.teacher.displayName}</strong>
         {session.teacher.email && <p>{session.teacher.email}</p>}
@@ -137,15 +143,12 @@ export function TeacherClassroom() {
           Đăng xuất
         </button>
       </div>
-    </details>
+    </ClassroomDisclosure>
   );
   return (
     <ClassroomFrame account={account}>
-      <div className="classroom-title">
-        <h1>GroupHub</h1>
-      </div>
       {(state.kind === "checking" || state.kind === "signing-out") && (
-        <p role="status">
+        <p className="classroom-auth classroom-muted" role="status">
           {state.kind === "checking"
             ? "Đang kiểm tra phiên giáo viên…"
             : "Đang đăng xuất…"}

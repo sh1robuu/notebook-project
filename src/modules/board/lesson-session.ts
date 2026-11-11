@@ -105,10 +105,10 @@ export class LessonSession {
       canSave: () => [...this.engines.values()].every((e) => !e.isPointing()),
       write: async (value) => {
         try {
-          return this.lastCommit = await workspace.save(
+          return (this.lastCommit = await workspace.save(
             value,
             workspace.lesson.revision,
-          );
+          ));
         } catch (error) {
           if (workspace.readOnly)
             for (const e of this.engines.values()) e.syncReadOnly();
@@ -514,14 +514,17 @@ export class LessonSession {
     this.#publish({ reading });
     this.engines.get("main")?.syncReadOnly();
   }
-  async restore(candidate: Lesson) {
+  async restore(
+    candidate: Lesson,
+    pdfPasswords: Readonly<Record<string, string>> = {},
+  ) {
     const checked = validateLesson(candidate);
     this.#generation++;
     for (const e of this.engines.values()) e.cancel();
     await this.saving.flush();
     if (this.saving.status.phase !== "saved")
       throw new Error("Finish or cancel active input before opening a lesson.");
-    this.#apply(await this.workspace.restore(checked));
+    this.#apply(await this.workspace.restore(checked), pdfPasswords);
   }
   previousLesson() {
     return this.workspace.previousLesson();
@@ -539,7 +542,7 @@ export class LessonSession {
     for (const engine of this.engines.values()) engine.cancel();
     this.#apply(validateLesson(lesson));
   }
-  #apply(lesson: Lesson) {
+  #apply(lesson: Lesson, pdfPasswords: Readonly<Record<string, string>> = {}) {
     this.#suspended = true;
     try {
       this.#wordDraft = lesson.wordDraft;
@@ -549,6 +552,8 @@ export class LessonSession {
       this.#retired.clear();
       this.pdf.close();
       this.pdf = new PdfRuntime();
+      for (const [id, password] of Object.entries(pdfPasswords))
+        if (lesson.pdfSources[id]) this.pdf.setPassword(id, password);
       this.slides.clear();
       // Native Store.history retains up to 1000 reactive record diffs even after
       // clearHistory(). A different lesson needs fresh stores, not cross-lesson

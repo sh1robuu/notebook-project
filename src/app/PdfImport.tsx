@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import type { BoardEngine } from "../modules/board/engine.ts";
 import type { PdfSource } from "../modules/pdf/sources.ts";
 import { inspectPdf, abortError } from "../modules/pdf/runtime.ts";
@@ -115,8 +116,12 @@ export function PdfImport({ engine }: { engine: BoardEngine }) {
         mode,
         bounds,
       );
-      await session.restore(next);
-      session.pdf.setPassword(candidate.source.id, candidate.password);
+      await session.restore(
+        next,
+        candidate.password !== undefined
+          ? { [candidate.source.id]: candidate.password }
+          : undefined,
+      );
       setCandidate(undefined);
       setOpen(false);
       setPassword("");
@@ -180,109 +185,117 @@ export function PdfImport({ engine }: { engine: BoardEngine }) {
       >
         Import PDF
       </button>
-      <dialog
-        ref={dialog}
-        aria-labelledby="pdf-import-title"
-        onCancel={(ev) => {
-          ev.preventDefault();
-          cancel();
-        }}
-      >
-        <h2 id="pdf-import-title">Import PDF</h2>
-        <p>
-          Choose or drop one local PDF, up to 50 MB and 200 pages. Documents
-          stay on this device.
-        </p>
-        <label>
-          PDF file
-          <input
-            type="file"
-            aria-label="PDF file"
-            accept=".pdf,application/pdf"
-            disabled={busy || committing}
-            onChange={(ev) => {
-              const f = ev.target.files?.[0];
-              ev.target.value = "";
-              if (f) void choose(f);
-            }}
-          />
-        </label>
-        {fileLabel ? <p>{fileLabel}</p> : null}
-        {progress ? <p role="status">{progress}</p> : null}
-        {passwordPrompt ? (
-          <form
-            onSubmit={(ev) => {
-              ev.preventDefault();
-              const resolve = answer.current;
-              answer.current = null;
-              setPasswordPrompt(false);
-              resolve?.(password);
-              setPassword("");
-            }}
-          >
-            <label>
-              PDF password
-              <input
-                type="password"
-                autoComplete="off"
-                value={password}
-                onChange={(ev) => setPassword(ev.target.value)}
-                autoFocus
-              />
-            </label>
-            <button type="submit">Continue with password</button>
-          </form>
-        ) : null}
-        {candidate ? (
-          <>
-            <p>
-              <strong>{candidate.source.name}</strong> ·{" "}
-              {candidate.source.size.toLocaleString()} bytes ·{" "}
-              {candidate.source.pages.length} pages
-            </p>
-            <p>
-              Import commits only after validation and storage succeed. Current
-              work is saved first. Main-page undo history resets; Previous
-              lesson returns to this work. Scratchpad content and view stay.
-            </p>
-            {candidate.source.pages.some((p) => p.rasterOnly) ? (
-              <p>
-                Supported PDF annotation appearances are static. Affected
-                backgrounds use 144 dpi raster PDF export.
-              </p>
-            ) : null}
-            {candidate.source.encrypted ? (
-              <p>
-                Encrypted original retained. Unlock again after reopening;
-                passwords are never saved.
-              </p>
-            ) : null}
-          </>
-        ) : null}
-        {error ? (
-          <p role="alert" className="dialog-error">
-            {error}
+      {createPortal(
+        <dialog
+          ref={dialog}
+          className="context-panel context-panel-edge document-import-panel"
+          aria-labelledby="pdf-import-title"
+          onCancel={(ev) => {
+            ev.preventDefault();
+            cancel();
+          }}
+        >
+          <header className="context-panel-heading">
+            <h2 id="pdf-import-title">Import PDF</h2>
+          </header>
+          <p>
+            Choose or drop one local PDF, up to 50 MB and 200 pages. Documents
+            stay on this device.
           </p>
-        ) : null}
-        <div className="dialog-actions">
-          <button disabled={committing} onClick={cancel}>
-            {busy ? "Cancel import" : "Cancel"}
-          </button>
-          <button
-            disabled={!candidate || busy || committing}
-            onClick={() => void commit("append")}
-          >
-            Append PDF pages
-          </button>
-          <button
-            className="primary"
-            disabled={!candidate || busy || committing}
-            onClick={() => void commit("replace")}
-          >
-            {committing ? "Committing…" : "Replace main pages"}
-          </button>
-        </div>
-      </dialog>
+          <label>
+            PDF file
+            <input
+              type="file"
+              aria-label="PDF file"
+              accept=".pdf,application/pdf"
+              disabled={busy || committing}
+              onChange={(ev) => {
+                const f = ev.target.files?.[0];
+                ev.target.value = "";
+                if (f) void choose(f);
+              }}
+            />
+          </label>
+          {fileLabel ? <p>{fileLabel}</p> : null}
+          {progress ? <p role="status">{progress}</p> : null}
+          {passwordPrompt ? (
+            <form
+              onSubmit={(ev) => {
+                ev.preventDefault();
+                const resolve = answer.current;
+                answer.current = null;
+                setPasswordPrompt(false);
+                resolve?.(password);
+                setPassword("");
+              }}
+            >
+              <label>
+                PDF password
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={password}
+                  onChange={(ev) => setPassword(ev.target.value)}
+                  autoFocus
+                />
+              </label>
+              <button type="submit">Continue with password</button>
+            </form>
+          ) : null}
+          {candidate ? (
+            <>
+              <p>
+                <strong>{candidate.source.name}</strong> ·{" "}
+                {candidate.source.size.toLocaleString()} bytes ·{" "}
+                {candidate.source.pages.length} pages
+              </p>
+              <p>
+                Import commits only after validation and storage succeed.
+                Current work is saved first. Main-page undo history resets;
+                Previous lesson returns to this work. Scratchpad content and
+                view stay.
+              </p>
+              {candidate.source.pages.some((p) => p.rasterOnly) ? (
+                <p>
+                  Supported PDF annotation appearances are static. Affected
+                  backgrounds use 144 dpi raster PDF export.
+                </p>
+              ) : null}
+              {candidate.source.encrypted ? (
+                <p>
+                  Encrypted original retained. Unlock again after reopening;
+                  passwords are never saved.
+                </p>
+              ) : null}
+            </>
+          ) : null}
+          {error ? (
+            <p role="alert" className="dialog-error">
+              {error}
+            </p>
+          ) : null}
+          <div className="dialog-actions">
+            <button disabled={committing} onClick={cancel}>
+              {busy ? "Cancel import" : "Cancel"}
+            </button>
+            <button
+              disabled={!candidate || busy || committing}
+              onClick={() => void commit("append")}
+            >
+              Append PDF pages
+            </button>
+            <button
+              className="primary"
+              disabled={!candidate || busy || committing}
+              onClick={() => void commit("replace")}
+            >
+              {committing ? "Committing…" : "Replace main pages"}
+            </button>
+          </div>
+        </dialog>,
+        engine.pages.editor.getContainer().closest(".workspace") ??
+          document.body,
+      )}
     </>
   );
 }

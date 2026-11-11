@@ -23,11 +23,8 @@
   content: "· ";
 }
 
-.workspace-tools {
-  width: min(688px, calc(100vw - 32px));
-  max-height: calc(100dvh - 36px);
-  overflow: auto;
-  padding: clamp(16px, 4vw, 26px);
+dialog.workspace-tools {
+  width: min(570px, calc(100vw - 24px));
 }
 
 .workspace-dialog-header,
@@ -45,16 +42,26 @@
 .workspace-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 16px 0 20px;
+  gap: 3px;
+  margin: 8px 0 12px;
   border-bottom: 1px solid var(--edge);
-  padding-bottom: 10px;
 }
 
-.workspace-tabs [aria-pressed="true"] {
-  border-color: #2b625f;
-  background: #edf6f3;
-  color: #194540;
+.workspace-tools .workspace-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+}
+
+.workspace-tools .workspace-tabs button:hover {
+  background: var(--frame);
+}
+
+.workspace-tools .workspace-tabs button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 650;
 }
 
 .workspace-tools h3 {
@@ -62,17 +69,11 @@
   font-size: 16px;
 }
 
-.workspace-tools button,
-.workspace-tools select,
-.workspace-tools input[type="search"] {
-  min-height: 36px;
-}
-
 .workspace-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 18px;
-  margin: 16px 0;
+  gap: 10px 14px;
+  margin: 12px 0;
 }
 
 .workspace-fields label,
@@ -125,7 +126,7 @@
 }
 
 .workspace-current {
-  color: #194540;
+  color: var(--accent);
   font-size: 13px;
   white-space: nowrap;
 }

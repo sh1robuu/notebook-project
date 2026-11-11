@@ -6,6 +6,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { createPortal } from "react-dom";
 import type { BoardEngine } from "../../modules/board/engine.ts";
 import { PPTX_MIME } from "../../modules/pptx/model.ts";
 import type { PptxImportResult } from "../../modules/pptx/model.ts";
@@ -192,92 +193,98 @@ export function PptxImport({ engine }: { engine: BoardEngine }) {
       >
         Import PowerPoint
       </button>
-      <dialog
-        ref={dialog}
-        className="pptx-import"
-        aria-labelledby="pptx-import-title"
-        onCancel={(event) => {
-          event.preventDefault();
-          close();
-        }}
-      >
-        <h2 id="pptx-import-title">Import PowerPoint</h2>
-        <p>
-          Choose a .pptx file or drop it here. PowerPoint content stays on this
-          device.
-        </p>
-        <label>
-          Choose a PPTX file
-          <input
-            type="file"
-            accept={".pptx," + PPTX_MIME}
-            disabled={saving}
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              event.currentTarget.value = "";
-              if (file) void choose(file);
-            }}
-          />
-        </label>
-        {progress ? <p role="status">{progress}</p> : null}
-        {candidate && deck && slide ? (
-          <>
-            <label>
-              Preview slide
-              <select
-                value={preview}
-                onChange={(event) => setPreview(Number(event.target.value))}
-              >
-                {deck.slides.map((s, i) => (
-                  <option key={s.id} value={i}>
-                    {i + 1} · {s.title}
-                    {s.hidden ? " (hidden)" : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p>
-              {deck.slides.length} slides · {Math.round(deck.width)} ×{" "}
-              {Math.round(deck.height)} slide units. Preview shows all supported
-              builds.
-            </p>
-            <div
-              className="pptx-preview"
-              style={{
-                maxWidth: Math.min(480, (230 * deck.width) / deck.height),
-              }}
-            >
-              <SlideCanvas
-                key={slide.id}
-                deck={deck}
-                slide={slide}
-                sources={candidate.result.sources}
-              />
-            </div>
-            <SlideWarnings
-              diagnostics={deck.diagnostics}
-              missingFonts={fonts}
-            />
-          </>
-        ) : null}
-        {error ? (
-          <p role="alert" className="dialog-error">
-            {error}
+      {createPortal(
+        <dialog
+          ref={dialog}
+          className="context-panel context-panel-edge document-import-panel pptx-import"
+          aria-labelledby="pptx-import-title"
+          onCancel={(event) => {
+            event.preventDefault();
+            close();
+          }}
+        >
+          <header className="context-panel-heading">
+            <h2 id="pptx-import-title">Import PowerPoint</h2>
+          </header>
+          <p>
+            Choose a .pptx file or drop it here. PowerPoint content stays on
+            this device.
           </p>
-        ) : null}
-        <div className="dialog-actions">
-          <button disabled={saving} onClick={close}>
-            {busy ? "Cancel import" : "Close"}
-          </button>
-          <button
-            className="primary"
-            disabled={!candidate || busy || saving}
-            onClick={() => void confirm()}
-          >
-            {saving ? "Saving slides…" : "Add slides"}
-          </button>
-        </div>
-      </dialog>
+          <label>
+            Choose a PPTX file
+            <input
+              type="file"
+              accept={".pptx," + PPTX_MIME}
+              disabled={saving}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                if (file) void choose(file);
+              }}
+            />
+          </label>
+          {progress ? <p role="status">{progress}</p> : null}
+          {candidate && deck && slide ? (
+            <>
+              <label>
+                Preview slide
+                <select
+                  value={preview}
+                  onChange={(event) => setPreview(Number(event.target.value))}
+                >
+                  {deck.slides.map((s, i) => (
+                    <option key={s.id} value={i}>
+                      {i + 1} · {s.title}
+                      {s.hidden ? " (hidden)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p>
+                {deck.slides.length} slides · {Math.round(deck.width)} ×{" "}
+                {Math.round(deck.height)} slide units. Preview shows all
+                supported builds.
+              </p>
+              <div
+                className="pptx-preview"
+                style={{
+                  maxWidth: Math.min(480, (230 * deck.width) / deck.height),
+                }}
+              >
+                <SlideCanvas
+                  key={slide.id}
+                  deck={deck}
+                  slide={slide}
+                  sources={candidate.result.sources}
+                />
+              </div>
+              <SlideWarnings
+                diagnostics={deck.diagnostics}
+                missingFonts={fonts}
+              />
+            </>
+          ) : null}
+          {error ? (
+            <p role="alert" className="dialog-error">
+              {error}
+            </p>
+          ) : null}
+          <div className="dialog-actions">
+            <button disabled={saving} onClick={close}>
+              {busy ? "Cancel import" : "Close"}
+            </button>
+            <button
+              className="primary"
+              disabled={!candidate || busy || saving}
+              onClick={() => void confirm()}
+            >
+              {saving ? "Saving slides…" : "Add slides"}
+            </button>
+          </div>
+        </dialog>,
+        engine.pages.editor.getContainer().closest(".workspace") ??
+          document.body,
+      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { useId } from "react";
 import type { FormEvent } from "react";
 import type { Room, RoomCommand } from "../../modules/classroom/api.ts";
+import { ClassroomDisclosure } from "./ClassroomFrame.tsx";
 import type { Confirmation } from "./RoomDetail.tsx";
 
 type RoomSectionProps = {
@@ -89,8 +90,10 @@ export function Roster({ room, act, confirm, disabled }: RoomSectionProps) {
                   >
                     ↓
                   </button>
-                  <details>
-                    <summary aria-label={"Sửa " + label}>Sửa</summary>
+                  <ClassroomDisclosure
+                    label="Sửa"
+                    accessibleName={"Sửa " + label}
+                  >
                     <form
                       className="classroom-form"
                       onSubmit={(event) => {
@@ -139,7 +142,7 @@ export function Roster({ room, act, confirm, disabled }: RoomSectionProps) {
                         </button>
                       </div>
                     </form>
-                  </details>
+                  </ClassroomDisclosure>
                 </div>
               </li>
             );
@@ -173,11 +176,14 @@ export function RoomGroups({ room, act, confirm, disabled }: RoomSectionProps) {
         <ul className="classroom-group-list">
           {room.groups.map((group) => (
             <li key={group.id}>
-              <details>
-                <summary>
-                  <span>{group.name}</span>
-                  <small>{counts.get(group.id) ?? 0} học sinh</small>
-                </summary>
+              <ClassroomDisclosure
+                label={
+                  <>
+                    <span>{group.name}</span>
+                    <small>{counts.get(group.id) ?? 0} học sinh</small>
+                  </>
+                }
+              >
                 <form
                   className="classroom-form"
                   onSubmit={(event) => {
@@ -220,7 +226,7 @@ export function RoomGroups({ room, act, confirm, disabled }: RoomSectionProps) {
                     </button>
                   </div>
                 </form>
-              </details>
+              </ClassroomDisclosure>
             </li>
           ))}
         </ul>

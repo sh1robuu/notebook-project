@@ -1,0 +1,727 @@
+.workspace {
+  --app-chrome: #f8f8fa;
+  --app-toolbar: #fdfcfd;
+  --app-rail: #f2eff0;
+  --app-edge: #dedde2;
+  --app-accent: #8c1827;
+  --app-accent-soft: #f7e9ec;
+  --app-ink: #25262a;
+  --app-muted: #62636d;
+  --app-hover: #efedf0;
+  --app-control-height: 32px;
+  --app-icon-size: 18px;
+  --app-rail-width: 132px;
+  --app-command-height: 44px;
+  --app-tools-height: 45px;
+  --app-footer-height: 34px;
+  --app-flyout-shadow: 0 6px 20px #24232b20;
+  --frame: var(--app-chrome);
+  --ink: var(--app-ink);
+  --muted: var(--app-muted);
+  --edge: var(--app-edge);
+  --accent: var(--app-accent);
+  --selected: var(--app-accent-soft);
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  gap: 0;
+  color: var(--app-ink);
+  background: var(--app-chrome);
+  font-size: 13px;
+}
+
+.command-bar,
+.drawing-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 9px;
+  flex: 0 0 auto;
+  min-width: 0;
+  border-bottom: 1px solid var(--app-edge);
+}
+.command-bar {
+  z-index: 34;
+  min-height: var(--app-command-height);
+  background: var(--app-chrome);
+}
+.drawing-bar {
+  z-index: 30;
+  min-height: var(--app-tools-height);
+  background: var(--app-toolbar);
+}
+.drawing-status,
+.board-opening {
+  gap: 16px;
+  color: var(--app-muted);
+}
+.board-opening h1 {
+  font-size: 14px;
+  color: var(--app-ink);
+}
+.command-group,
+.draw-group,
+.command-identity,
+.adaptive-content {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.command-group,
+.draw-group {
+  flex: 0 0 auto;
+}
+.command-group + .command-group,
+.draw-group + .draw-group,
+.drawing-bar .drawing-settings,
+.drawing-bar .scratch-command {
+  padding-inline-start: 8px;
+  border-inline-start: 1px solid var(--app-edge);
+}
+.command-start {
+  padding-inline-end: 8px;
+  border-inline-end: 1px solid var(--app-edge);
+}
+.command-identity {
+  flex: 1 1 12rem;
+}
+.command-identity input {
+  min-width: 0;
+  max-width: min(260px, 100%);
+  flex: 1 1 160px;
+  height: var(--app-control-height);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--app-ink);
+  padding: 0 6px;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 650;
+}
+.command-identity input:hover:not(:disabled) {
+  border-color: var(--app-edge);
+  background: white;
+}
+.command-identity .save-status {
+  flex: 0 0 auto;
+  margin-inline-start: 4px;
+  font-size: 11px;
+}
+.command-identity .save-time {
+  display: none;
+}
+.command-identity .save-status.saved svg {
+  color: #26715c;
+}
+.notebook-brand {
+  display: grid;
+  place-items: center;
+  flex: 0 0 var(--app-control-height);
+}
+.notebook-brand img {
+  display: block;
+}
+.workspace .command-bar .file-actions {
+  gap: 3px;
+}
+.workspace .command-bar .file-actions button > span:not(:only-child),
+.workspace .command-bar .workspace-trigger > span:not(.sr-only) {
+  display: none;
+}
+.workspace .command-bar .workspace-trigger {
+  min-width: 0;
+}
+.workspace
+  :is(.command-bar, .drawing-bar)
+  :is(
+    .command-group > button,
+    .file-actions > button,
+    .draw-group > button,
+    .chrome-control,
+    .adaptive-trigger,
+    .interactive-launch,
+    .math-tools > summary
+  ) {
+  box-sizing: border-box;
+  min-width: var(--app-control-height);
+  min-height: var(--app-control-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--app-ink);
+  text-decoration: none;
+  line-height: 1.15;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.workspace
+  :is(.command-bar, .drawing-bar)
+  :is(button, summary, a):focus-visible,
+.workspace .board-footer :is(button, select, summary):focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 1px;
+}
+.workspace
+  :is(.command-bar, .drawing-bar)
+  :is(
+    .command-group > button,
+    .file-actions > button,
+    .draw-group > button,
+    .chrome-control,
+    .adaptive-trigger,
+    .interactive-launch,
+    .math-tools > summary
+  ):is(:hover, [aria-expanded="true"]):not(:disabled),
+.workspace .tool-disclosure[open] > summary {
+  background: var(--app-hover);
+}
+.workspace
+  :is(.command-bar, .drawing-bar)
+  :is(button, summary)[aria-pressed="true"] {
+  color: var(--app-accent);
+  background: var(--app-accent-soft);
+  border-color: #d3a0a8;
+  box-shadow: inset 0 -1px var(--app-accent);
+}
+.workspace
+  :is(.command-bar, .drawing-bar)
+  :is(.command-group, .draw-group)
+  > button:disabled,
+.workspace .command-bar .file-actions > button:disabled {
+  color: #797881;
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+}
+.workspace :is(.command-bar, .drawing-bar, .board-footer) svg {
+  flex-shrink: 0;
+}
+.workspace
+  :is(.command-bar, .drawing-bar, .board-footer)
+  :is(button, summary, a)
+  > svg {
+  inline-size: var(--app-icon-size);
+  block-size: var(--app-icon-size);
+}
+.workspace
+  :is(.documents-disclosure, .shapes-disclosure, .extra-ink)
+  summary
+  > svg:last-child {
+  inline-size: 12px;
+  block-size: 12px;
+}
+.classroom-entry {
+  flex: 0 0 auto;
+}
+.command-extra,
+.drawing-extra {
+  display: contents;
+}
+.workspace :is(.command-bar, .drawing-bar) .adaptive-tools > .adaptive-trigger {
+  display: none;
+}
+.adaptive-content {
+  display: contents;
+}
+
+.tool-disclosure {
+  position: relative;
+}
+.tool-disclosure > summary {
+  list-style: none;
+}
+.tool-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.tool-flyout {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 0;
+  z-index: 4;
+  display: grid;
+  gap: 3px;
+  padding: 6px;
+  min-width: 174px;
+  max-width: min(300px, calc(100vw - 18px));
+  max-height: min(420px, calc(100dvh - 120px));
+  overflow: auto;
+  background: white;
+  border: 1px solid var(--app-edge);
+  border-radius: 6px;
+  box-shadow: var(--app-flyout-shadow);
+}
+.tool-disclosure:not([open]) > .tool-flyout {
+  display: none;
+}
+.documents-disclosure .tool-flyout,
+.view-disclosure .tool-flyout {
+  left: auto;
+  right: 0;
+}
+.workspace .tool-flyout :is(button, select):not(dialog *) {
+  min-height: var(--app-control-height);
+  border-color: transparent;
+  padding: 4px 8px;
+  justify-content: flex-start;
+}
+.workspace .tool-flyout button:not(dialog *):focus-visible {
+  outline-offset: -2px;
+}
+.document-actions.tool-flyout > div:not(.file-message) {
+  width: 100%;
+}
+.document-actions.tool-flyout > button {
+  width: 100%;
+  text-align: start;
+}
+.document-context {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  z-index: 15;
+}
+.document-context:not(:has(> *)) {
+  display: none;
+}
+.document-context
+  > :is(.pdf-controls, .word-teaching-controls, .pptx-controls) {
+  padding: 3px 9px;
+  min-width: 0;
+  background: var(--app-chrome);
+  border-bottom: 1px solid var(--app-edge);
+}
+.document-context > .pdf-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.document-context button,
+.workspace .surface-controls :is(button, input, select) {
+  min-height: var(--app-control-height);
+  padding-block: 3px;
+  font-size: 12px;
+}
+.workspace .surface-controls {
+  min-height: 0;
+  padding: 3px 9px;
+  background: var(--app-chrome);
+}
+.workspace .scratch-heading {
+  min-height: 28px;
+  font-size: 11px;
+}
+.workspace .scratch-heading span {
+  display: none;
+}
+.notebook-notice {
+  padding: 4px 12px;
+  font-size: 12px;
+  background: #fff7e8;
+}
+.workspace .file-message {
+  top: calc(var(--app-command-height) + 4px);
+}
+.workspace .editing-message {
+  top: calc(var(--app-tools-height) + 4px);
+}
+
+.ink-controls {
+  gap: 6px;
+}
+.ink-palette,
+.ink-sizes {
+  display: flex;
+  gap: 1px;
+  min-inline-size: 0;
+  align-items: center;
+  padding: 0 3px;
+  margin: 0;
+  background: #f4f2f4;
+  border: 1px solid #ebe7eb;
+  border-radius: 6px;
+}
+.workspace .drawing-bar :is(.ink-palette, .ink-sizes) button {
+  position: relative;
+  min-height: calc(var(--app-control-height) - 2px);
+  min-width: 25px;
+  border: 0;
+  background: transparent;
+  border-radius: 4px;
+  padding: 0 4px;
+}
+.workspace
+  .drawing-bar
+  :is(.ink-palette, .ink-sizes)
+  button:hover:not(:disabled) {
+  background: var(--app-hover);
+}
+.workspace
+  .drawing-bar
+  :is(.ink-palette, .ink-sizes)
+  button[aria-pressed="true"] {
+  color: var(--app-accent);
+  box-shadow: inset 0 -2px var(--app-accent);
+  background: var(--app-accent-soft);
+}
+.ink-swatch > span,
+.current-swatch {
+  inline-size: 11px;
+  block-size: 11px;
+  display: block;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px #0002;
+}
+.ink-sizes button > span {
+  display: block;
+  border-radius: 50%;
+  background: var(--app-ink);
+}
+.extra-ink .extra-swatches {
+  grid-template-columns: repeat(4, 1fr);
+  min-width: 124px;
+}
+.workspace .extra-ink summary.chrome-control {
+  min-height: 29px;
+  min-width: 34px;
+  padding-inline: 4px;
+}
+.drawing-settings .tool-flyout {
+  min-width: 206px;
+}
+.touch-setting {
+  display: grid;
+  gap: 4px;
+  padding: 4px 6px;
+}
+.workspace .touch-setting select {
+  border: 1px solid var(--app-edge);
+  border-radius: 4px;
+}
+.selection-inspector {
+  position: absolute;
+  right: 10px;
+  top: calc(100% + 7px);
+  width: min(248px, calc(100vw - 20px));
+  max-height: min(64dvh, 480px);
+  overflow: auto;
+  padding: 9px;
+  background: white;
+  border: 1px solid var(--app-edge);
+  border-radius: 6px;
+  box-shadow: var(--app-flyout-shadow);
+}
+.workspace .selection-inspector .object-properties {
+  border-top: 0;
+  padding-top: 2px;
+  gap: 7px;
+}
+.workspace .selection-inspector .object-properties h2 {
+  padding-right: 32px;
+  line-height: 26px;
+}
+.workspace .selection-inspector .inspector-close {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  min-width: var(--app-control-height);
+  min-height: var(--app-control-height);
+  padding: 0;
+  border-color: transparent;
+}
+
+.workspace .work-area {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 0;
+  gap: 0;
+  min-height: 0;
+}
+.workspace .surface-workspace {
+  flex: 1 1 0;
+}
+.workspace .board-sheet {
+  border: 0;
+  border-radius: 0;
+}
+.workspace .board-footer {
+  min-height: var(--app-footer-height);
+  padding: 0 7px 0 0;
+  gap: 10px;
+  flex-wrap: nowrap;
+  border-color: var(--app-edge);
+  background: var(--app-chrome);
+}
+.notebook-tab {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  color: var(--app-accent);
+  border-right: 1px solid var(--app-edge);
+  box-shadow: inset 0 2px var(--app-accent);
+  background: white;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.notebook-tab > svg {
+  width: 14px;
+  height: 14px;
+}
+.workspace .board-scope {
+  flex: 1 1 auto;
+  font-size: 11px;
+  gap: 8px;
+  margin-inline-start: auto;
+  justify-content: flex-end;
+  min-width: 0;
+  white-space: nowrap;
+}
+.workspace .zoom-controls {
+  flex: 0 0 auto;
+  gap: 0;
+}
+.workspace .zoom-controls button {
+  min-width: var(--app-control-height);
+  min-height: calc(var(--app-footer-height) - 2px);
+  padding: 0 4px;
+}
+.workspace .zoom-controls button[data-testid] {
+  min-width: 47px;
+}
+.workspace .zoom-controls button > svg {
+  width: 16px;
+  height: 16px;
+}
+.workspace[data-presenting="true"]
+  :is(.command-bar, .drawing-bar, .surface-controls, .notebook-notice) {
+  display: none;
+}
+.presentation-exit {
+  position: absolute;
+  z-index: 22;
+  top: 8px;
+  right: 10px;
+  display: flex;
+  gap: 4px;
+}
+.presentation-exit button {
+  background: var(--app-chrome);
+  min-height: var(--app-control-height);
+}
+
+@media (max-width: 1000px) {
+  .command-identity .save-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .command-identity .save-status {
+    margin-inline-start: 0;
+  }
+}
+@media (max-width: 1180px) {
+  .drawing-bar .drawing-extra {
+    display: block;
+  }
+  .workspace .drawing-bar .drawing-extra .adaptive-trigger {
+    display: inline-flex;
+  }
+  .drawing-extra .adaptive-content {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 8px;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    box-sizing: border-box;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 7px;
+    border: 1px solid var(--app-edge);
+    border-radius: 6px;
+    background: var(--app-toolbar);
+    box-shadow: var(--app-flyout-shadow);
+  }
+  .drawing-extra[data-open="true"] .adaptive-content {
+    display: flex;
+  }
+  .drawing-extra .adaptive-content :is(.draw-group, .drawing-settings) {
+    padding: 0;
+    border: 0;
+  }
+  .workspace .board-scope {
+    flex: 0 0 0;
+  }
+  .workspace .board-scope > span {
+    position: absolute;
+    left: -10000px;
+  }
+  .workspace .board-footer {
+    justify-content: space-between;
+  }
+}
+@media (max-width: 690px) {
+  .workspace {
+    --app-control-height: 42px;
+    --app-command-height: 46px;
+    --app-tools-height: 46px;
+    --app-footer-height: 40px;
+    --app-icon-size: 19px;
+  }
+  .command-bar,
+  .drawing-bar {
+    padding-inline: 4px;
+    gap: 2px;
+  }
+  .command-start {
+    padding: 0;
+    border: 0;
+  }
+  .command-start .notebook-brand {
+    display: none;
+  }
+  .command-identity input {
+    padding-inline: 3px;
+    font-size: 13px;
+  }
+  .workspace .classroom-entry > span,
+  .workspace .scratch-command > button > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .command-bar .command-extra {
+    display: block;
+  }
+  .workspace .command-bar .command-extra .adaptive-trigger {
+    display: inline-flex;
+  }
+  .command-extra .adaptive-content {
+    display: none;
+    position: absolute;
+    right: 5px;
+    top: calc(100% + 5px);
+    gap: 5px;
+    padding: 5px;
+    flex-wrap: wrap;
+    max-width: calc(100vw - 10px);
+    background: var(--app-toolbar);
+    border: 1px solid var(--app-edge);
+    border-radius: 6px;
+    box-shadow: var(--app-flyout-shadow);
+  }
+  .command-extra[data-open="true"] .adaptive-content {
+    display: flex;
+  }
+  .command-extra .adaptive-content .command-group {
+    padding: 0;
+    border: 0;
+    flex-wrap: wrap;
+  }
+  .workspace .draw-group {
+    gap: 0;
+  }
+  .drawing-bar > .scratch-command {
+    border: 0;
+    padding: 0;
+  }
+  .workspace .drawing-extra .adaptive-content {
+    display: none;
+    width: min(330px, calc(100vw - 16px));
+    gap: 6px;
+  }
+  .workspace .drawing-extra[data-open="true"] .adaptive-content {
+    display: flex;
+  }
+  .drawing-extra .ink-controls {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .drawing-extra .ink-palette,
+  .drawing-extra .ink-sizes {
+    flex: 0 0 auto;
+  }
+  .workspace .drawing-bar :is(.ink-palette, .ink-sizes) button {
+    min-height: 38px;
+    min-width: 33px;
+  }
+  .workspace .board-footer {
+    gap: 4px;
+    padding-right: 2px;
+  }
+  .workspace .board-footer .page-navigation .page-icon-control {
+    min-inline-size: 32px;
+    inline-size: 32px;
+    min-block-size: 38px;
+    block-size: 38px;
+  }
+  .workspace .board-footer .board-scope {
+    flex: 0 0 0;
+  }
+  .workspace .notebook-tab {
+    padding: 0 6px;
+  }
+  .notebook-tab > span {
+    display: none;
+  }
+  .workspace .zoom-controls button {
+    min-width: 29px;
+  }
+  .workspace .zoom-controls button[data-testid] {
+    min-width: 38px;
+  }
+  .workspace .selection-inspector {
+    max-height: min(46dvh, 370px);
+  }
+}
+@media (max-width: 365px) {
+  .workspace {
+    --app-control-height: 39px;
+  }
+  .command-group {
+    gap: 1px;
+  }
+  .workspace .board-footer .notebook-tab {
+    display: none;
+  }
+  .workspace .board-footer,
+  .workspace .page-navigation {
+    gap: 0;
+  }
+  .workspace .page-navigation {
+    font-size: 11px;
+  }
+}
+@media (pointer: coarse) and (min-width: 691px) {
+  .workspace {
+    --app-control-height: 40px;
+    --app-command-height: 47px;
+    --app-tools-height: 47px;
+    --app-footer-height: 40px;
+  }
+  .workspace .drawing-bar :is(.ink-palette, .ink-sizes) button {
+    min-width: 28px;
+  }
+}

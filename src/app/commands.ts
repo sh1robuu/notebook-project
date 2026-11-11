@@ -204,6 +204,19 @@ export class CommandRegistry {
           e.stopImmediatePropagation();
           return;
         }
+        if (
+          e.key === "Escape" &&
+          target?.closest(
+            'details[open], [data-adaptive-menu][data-open="true"], [data-board-controls]',
+          )
+        )
+          return;
+        if (target?.closest("[data-board-controls]")) {
+          // Keep page-control keys out of both our commands and SDK shortcuts.
+          // Native button/select behavior still runs because default is retained.
+          e.stopImmediatePropagation();
+          return;
+        }
         const editable = target?.closest(
           'dialog,input,textarea,select,[role="menu"],[contenteditable="true"]',
         );

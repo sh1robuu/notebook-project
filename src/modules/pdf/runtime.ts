@@ -183,7 +183,13 @@ export class PdfRuntime {
     cancelled: 0,
   };
   setPassword(id: string, password?: string) {
-    if (password !== undefined) this.#passwords.set(id, password);
+    if (password === undefined || this.#passwords.get(id) === password) return;
+    this.#passwords.set(id, password);
+    const pending = this.#docs.get(id);
+    if (pending) {
+      this.#docs.delete(id);
+      void pending.task.destroy();
+    }
   }
   password(id: string) {
     return this.#passwords.get(id);

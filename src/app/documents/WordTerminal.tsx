@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import type { BoardEngine } from "../../modules/board/engine.ts";
 import {
   emptyDocument,
@@ -177,9 +178,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       setSourceDirty(false);
       setDirty(true);
       setCandidate(null);
-      setStatus(
-        "Content ready. Review any notices, then save your draft.",
-      );
+      setStatus("Content ready. Review any notices, then save your draft.");
     } catch (reason) {
       if (!task.signal.aborted)
         setError(
@@ -212,9 +211,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       const result = await inspectDocx(file, task.signal, setStatus);
       if (task.signal.aborted || scope !== session.scope()) return;
       setCandidate(result);
-      setStatus(
-        "DOCX ready. Review it before adding it to your draft.",
-      );
+      setStatus("DOCX ready. Review it before adding it to your draft.");
     } catch (reason) {
       if (!task.signal.aborted) {
         setStatus("");
@@ -257,7 +254,9 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       await session.saveWordDraft(model, sources);
       if (scope !== session.scope()) return false;
       setDirty(false);
-      setStatus("Draft saved on this device. Your teaching page has not changed.");
+      setStatus(
+        "Draft saved on this device. Your teaching page has not changed.",
+      );
       return true;
     } catch (reason) {
       setError(
@@ -318,9 +317,7 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
       rollback = editor.markHistoryStoppingPoint(
         "Before reviewed Word compilation",
       );
-      setStatus(
-        "Preparing your teaching page…",
-      );
+      setStatus("Preparing your teaching page…");
       const result = await compileDocument(
         editor,
         model,
@@ -435,280 +432,292 @@ export function WordTerminal({ engine }: { engine: BoardEngine }) {
           if (file) void choose(file);
         }}
       />
-      <dialog
-        ref={dialog}
-        className="word-dialog"
-        aria-label="Word Terminal"
-        onCancel={(event) => {
-          event.preventDefault();
-          close();
-        }}
-        onDragOver={(event) => {
-          event.preventDefault();
-        }}
-        onDrop={(event) => {
-          event.preventDefault();
-          const file = event.dataTransfer.files[0];
-          if (file && !busy) void choose(file);
-        }}
-      >
-        <div className="word-heading">
-          <h2>Word Terminal</h2>
-          <button onClick={close}>Close terminal</button>
-        </div>
-        <p>
-          Import or paste your Word content, edit it, then add it to a teaching
-          page.
-        </p>
-        <div className="word-actions">
-          <button
-            disabled={busy || session.workspace.readOnly}
-            onClick={() => picker.current?.click()}
-          >
-            Choose DOCX
-          </button>
-          <button
-            disabled={busy || session.workspace.readOnly}
-            onClick={() => void save()}
-          >
-            Save draft
-          </button>
-          <button
-            disabled={
-              busy || session.workspace.readOnly || !model.blocks.length
-            }
-            onClick={() => setConfirm("compile")}
-          >
-            Compile teaching page
-          </button>
-          <button
-            disabled={busy || session.workspace.readOnly}
-            onClick={() => setConfirm("clear")}
-          >
-            Clear draft
-          </button>
-          {compiled ? (
-            <button
-              onClick={() => {
-                setOpen(false);
-                engine.pages.editor.focus();
-              }}
-            >
-              Go to teaching page
-            </button>
-          ) : null}
-          {busy ? <button onClick={stop}>Cancel operation</button> : null}
-        </div>
-        {fileLabel ? <p>{fileLabel}</p> : null}
-        <p role="status" data-testid="word-status">
-          {status ||
-            (dirty || sourceDirty
-              ? "You have unsaved changes. The teaching page has not changed."
-              : "Edit the draft here, then update the teaching page when you are ready.")}
-        </p>
-        {error ? (
-          <p role="alert" className="dialog-error">
-            {error}
-          </p>
-        ) : null}
-        {confirm ? (
+      {createPortal(
+        <dialog
+          ref={dialog}
+          className="context-panel word-dialog"
+          aria-label="Word Terminal"
+          onCancel={(event) => {
+            event.preventDefault();
+            close();
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            if (file && !busy) void choose(file);
+          }}
+        >
+          <header className="context-panel-heading word-heading">
+            <h2>Word Terminal</h2>
+            <button onClick={close}>Close terminal</button>
+          </header>
           <div
-            className="word-confirm"
+            className="word-actions word-document-actions"
             role="group"
-            aria-label="Review terminal action"
+            aria-label="Draft actions"
           >
-            <p>
-              {confirm === "compile"
-                ? "Add this draft to a teaching page, or update its existing page? Notes on removed content stay in their previous positions. Page breaks may differ from Word. You can undo this change."
-                : confirm === "replace"
-                  ? "Replace this draft with the imported document? Your teaching page will not change."
-                  : confirm === "clear"
-                    ? "Clear this draft? Existing teaching pages and original files will remain."
-                    : confirm === "delete"
-                      ? "Delete this block? Its notes will stay in place when you update the teaching page."
-                      : "Discard unsaved changes and close? Your last saved draft will remain."}
-            </p>
-            <button onClick={() => setConfirm(null)}>Cancel action</button>
-            <button
-              disabled={busy}
-              onClick={() => {
-                if (confirm === "compile") {
-                  void compile();
-                  return;
-                }
-                if (confirm === "replace") accept();
-                if (confirm === "clear") {
-                  load(emptyDocument());
-                  setDirty(true);
-                }
-                if (confirm === "close") {
-                  setDirty(false);
-                  setSourceDirty(false);
-                  setOpen(false);
-                }
-                if (confirm === "delete" && block) {
-                  try {
-                    const next = deleteBlock(model, block.id);
-                    setModel(next);
-                    setSelected(next.blocks[0]?.id ?? "");
-                    setDirty(true);
-                    setCompiled(false);
-                  } catch (reason) {
-                    setError(String(reason));
-                  }
-                }
-                setConfirm(null);
-              }}
-            >
-              {confirm === "compile"
-                ? "Confirm compilation"
-                : confirm === "replace"
-                  ? "Confirm replacement"
-                  : confirm === "clear"
-                    ? "Confirm clear"
-                    : confirm === "delete"
-                      ? "Confirm block deletion"
-                      : "Discard unsaved terminal edits"}
-            </button>
-          </div>
-        ) : null}
-        {candidate ? (
-          <div className="word-import-review">
-            <h3>Checked document</h3>
-            <p>
-              {candidate.document.blocks.length} blocks ·{" "}
-              {candidate.document.diagnostics.length} notices. The original DOCX
-              will be kept.
-            </p>
-            <button
-              onClick={() =>
-                model.blocks.length ? setConfirm("replace") : accept()
-              }
-            >
-              Use checked document
-            </button>
-            <button onClick={() => setCandidate(null)}>
-              Keep current draft
-            </button>
-          </div>
-        ) : null}
-        <div className="word-workspace">
-          <section className="word-editor" aria-label="Source draft editor">
-            <label>
-              Source / paste workspace
-              <textarea
-                aria-label="Source / paste workspace"
-                value={sourceText}
-                maxLength={500000}
-                rows={5}
-                disabled={busy}
-                onChange={(event) => {
-                  setSourceText(event.target.value);
-                  setSourceDirty(true);
-                }}
-              />
-            </label>
-            <p>
-              Paste from Word, or paste plain text with a blank line between
-              paragraphs. If equations or images are missing, import the DOCX
-              file instead. RTF is not supported.
-            </p>
             <button
               disabled={busy || session.workspace.readOnly}
-              onClick={() => void normalize()}
+              onClick={() => picker.current?.click()}
             >
-              Normalize source
+              Choose DOCX
             </button>
-            <label>
-              Draft title
-              <input
-                value={model.title}
-                maxLength={120}
-                onChange={(event) => {
-                  setModel({
-                    ...model,
-                    title: event.target.value,
-                    revision: model.revision + 1,
-                  });
-                  setDirty(true);
-                }}
-              />
-            </label>
-            <label>
-              Document block
-              <select
-                aria-label="Document block"
-                value={block?.id ?? ""}
-                onChange={(event) => setSelected(event.target.value)}
-                disabled={busy}
-              >
-                {blocks.map((block, index) => (
-                  <option key={block.id} value={block.id}>
-                    {index + 1}. {block.kind} · {block.id.slice(-16)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="word-actions">
-              <button disabled={busy} onClick={() => insert()}>
-                Insert paragraph after
-              </button>
-              <button disabled={busy} onClick={() => insert(true)}>
-                Insert equation after
-              </button>
+            <button
+              disabled={busy || session.workspace.readOnly}
+              onClick={() => void save()}
+            >
+              Save draft
+            </button>
+            <button
+              className="primary"
+              disabled={
+                busy || session.workspace.readOnly || !model.blocks.length
+              }
+              onClick={() => setConfirm("compile")}
+            >
+              Compile teaching page
+            </button>
+            <button
+              disabled={busy || session.workspace.readOnly}
+              onClick={() => setConfirm("clear")}
+            >
+              Clear draft
+            </button>
+            {compiled ? (
               <button
-                disabled={busy || !block}
-                onClick={() => setConfirm("delete")}
+                onClick={() => {
+                  setOpen(false);
+                  engine.pages.editor.focus();
+                }}
               >
-                Delete block
+                Go to teaching page
+              </button>
+            ) : null}
+            {busy ? <button onClick={stop}>Cancel operation</button> : null}
+          </div>
+          <div className="word-draft-status">
+            {fileLabel ? <p>{fileLabel}</p> : null}
+            <p role="status" data-testid="word-status">
+              {status ||
+                (dirty || sourceDirty
+                  ? "You have unsaved changes. The teaching page has not changed."
+                  : "Import or paste Word content, then compile the draft to a teaching page.")}
+            </p>
+          </div>
+          {error ? (
+            <p role="alert" className="dialog-error">
+              {error}
+            </p>
+          ) : null}
+          {confirm ? (
+            <div
+              className="word-confirm"
+              role="group"
+              aria-label="Review terminal action"
+            >
+              <p>
+                {confirm === "compile"
+                  ? "Add this draft to a teaching page, or update its existing page? Notes on removed content stay in their previous positions. Page breaks may differ from Word. You can undo this change."
+                  : confirm === "replace"
+                    ? "Replace this draft with the imported document? Your teaching page will not change."
+                    : confirm === "clear"
+                      ? "Clear this draft? Existing teaching pages and original files will remain."
+                      : confirm === "delete"
+                        ? "Delete this block? Its notes will stay in place when you update the teaching page."
+                        : "Discard unsaved changes and close? Your last saved draft will remain."}
+              </p>
+              <button onClick={() => setConfirm(null)}>Cancel action</button>
+              <button
+                disabled={busy}
+                onClick={() => {
+                  if (confirm === "compile") {
+                    void compile();
+                    return;
+                  }
+                  if (confirm === "replace") accept();
+                  if (confirm === "clear") {
+                    load(emptyDocument());
+                    setDirty(true);
+                  }
+                  if (confirm === "close") {
+                    setDirty(false);
+                    setSourceDirty(false);
+                    setOpen(false);
+                  }
+                  if (confirm === "delete" && block) {
+                    try {
+                      const next = deleteBlock(model, block.id);
+                      setModel(next);
+                      setSelected(next.blocks[0]?.id ?? "");
+                      setDirty(true);
+                      setCompiled(false);
+                    } catch (reason) {
+                      setError(String(reason));
+                    }
+                  }
+                  setConfirm(null);
+                }}
+              >
+                {confirm === "compile"
+                  ? "Confirm compilation"
+                  : confirm === "replace"
+                    ? "Confirm replacement"
+                    : confirm === "clear"
+                      ? "Confirm clear"
+                      : confirm === "delete"
+                        ? "Confirm block deletion"
+                        : "Discard unsaved terminal edits"}
               </button>
             </div>
-            {block ? (
-              <BlockEditor
-                active={open && !busy && !candidate}
-                key={block.id + ":" + model.revision}
-                block={block}
-                document={model}
-                sources={sources}
-                onApply={apply}
-              />
-            ) : (
-              <p>No source blocks yet.</p>
-            )}
-          </section>
-          <section className="word-preview-panel" aria-label="Document preview">
-            <WordPreview document={shown} sources={shownSources} />
-            <details
-              className="word-diagnostics"
-              open={shown.diagnostics.length > 0}
+          ) : null}
+          {candidate ? (
+            <div className="word-import-review">
+              <h3>Checked document</h3>
+              <p>
+                {candidate.document.blocks.length} blocks ·{" "}
+                {candidate.document.diagnostics.length} notices. The original
+                DOCX will be kept.
+              </p>
+              <button
+                onClick={() =>
+                  model.blocks.length ? setConfirm("replace") : accept()
+                }
+              >
+                Use checked document
+              </button>
+              <button onClick={() => setCandidate(null)}>
+                Keep current draft
+              </button>
+            </div>
+          ) : null}
+          <div className="word-workspace">
+            <section className="word-editor" aria-label="Source draft editor">
+              <h3>Draft editor</h3>
+              <label>
+                Source / paste workspace
+                <textarea
+                  aria-label="Source / paste workspace"
+                  value={sourceText}
+                  maxLength={500000}
+                  rows={5}
+                  disabled={busy}
+                  onChange={(event) => {
+                    setSourceText(event.target.value);
+                    setSourceDirty(true);
+                  }}
+                />
+              </label>
+              <p>
+                Paste from Word, or paste plain text with a blank line between
+                paragraphs. If equations or images are missing, import the DOCX
+                file instead. RTF is not supported.
+              </p>
+              <button
+                disabled={busy || session.workspace.readOnly}
+                onClick={() => void normalize()}
+              >
+                Normalize source
+              </button>
+              <label>
+                Draft title
+                <input
+                  value={model.title}
+                  maxLength={120}
+                  onChange={(event) => {
+                    setModel({
+                      ...model,
+                      title: event.target.value,
+                      revision: model.revision + 1,
+                    });
+                    setDirty(true);
+                  }}
+                />
+              </label>
+              <label>
+                Document block
+                <select
+                  aria-label="Document block"
+                  value={block?.id ?? ""}
+                  onChange={(event) => setSelected(event.target.value)}
+                  disabled={busy}
+                >
+                  {blocks.map((block, index) => (
+                    <option key={block.id} value={block.id}>
+                      {index + 1}. {block.kind} · {block.id.slice(-16)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="word-actions">
+                <button disabled={busy} onClick={() => insert()}>
+                  Insert paragraph after
+                </button>
+                <button disabled={busy} onClick={() => insert(true)}>
+                  Insert equation after
+                </button>
+                <button
+                  disabled={busy || !block}
+                  onClick={() => setConfirm("delete")}
+                >
+                  Delete block
+                </button>
+              </div>
+              {block ? (
+                <BlockEditor
+                  active={open && !busy && !candidate}
+                  key={block.id + ":" + model.revision}
+                  block={block}
+                  document={model}
+                  sources={sources}
+                  onApply={apply}
+                />
+              ) : (
+                <p>No source blocks yet.</p>
+              )}
+            </section>
+            <section
+              className="word-preview-panel"
+              aria-label="Document preview"
             >
-              <summary>Diagnostics ({shown.diagnostics.length})</summary>
-              <ul>
-                {shown.diagnostics.map((diagnostic) => (
-                  <li key={diagnostic.id}>
-                    <strong>
-                      {diagnostic.severity}: {diagnostic.code}
-                    </strong>{" "}
-                    · {diagnostic.message} {diagnostic.recovery}
-                    {diagnostic.blockId && !candidate ? (
-                      <button
-                        onClick={() => {
-                          setSelected(diagnostic.blockId!);
-                          setStatus(
-                            `Reviewing affected source block: ${diagnostic.code}`,
-                          );
-                        }}
-                      >
-                        Review affected block
-                      </button>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          </section>
-        </div>
-      </dialog>
+              <h3>Preview</h3>
+              <WordPreview document={shown} sources={shownSources} />
+              <details
+                className="word-diagnostics"
+                open={shown.diagnostics.length > 0}
+              >
+                <summary>Diagnostics ({shown.diagnostics.length})</summary>
+                <ul>
+                  {shown.diagnostics.map((diagnostic) => (
+                    <li key={diagnostic.id}>
+                      <strong>
+                        {diagnostic.severity}: {diagnostic.code}
+                      </strong>{" "}
+                      · {diagnostic.message} {diagnostic.recovery}
+                      {diagnostic.blockId && !candidate ? (
+                        <button
+                          onClick={() => {
+                            setSelected(diagnostic.blockId!);
+                            setStatus(
+                              `Reviewing affected source block: ${diagnostic.code}`,
+                            );
+                          }}
+                        >
+                          Review affected block
+                        </button>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </section>
+          </div>
+        </dialog>,
+        engine.pages.editor.getContainer().closest(".workspace") ??
+          document.body,
+      )}
     </>
   );
 }

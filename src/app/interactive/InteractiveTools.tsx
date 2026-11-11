@@ -12,6 +12,7 @@ import type { BoardEngine } from "../../modules/board/engine.ts";
 import { openInteractiveEvent } from "../../modules/interactive/InteractiveShape.tsx";
 import { scopedInteractive } from "../../modules/interactive/board.ts";
 import type { InteractiveRequest } from "./InteractiveDialog.tsx";
+import { Icon } from "../Icon.tsx";
 
 const InteractiveDialog = lazy(() => import("./InteractiveDialog.tsx"));
 
@@ -61,13 +62,16 @@ export function InteractiveTools({
         <button
           type="button"
           className="interactive-launch"
+          aria-label="Chèn mô phỏng"
+          title="Chèn mô phỏng HTML hoặc GeoGebra"
           disabled={editor.getIsReadonly()}
           onClick={() => {
             engine.editing.closeMath();
             setRequest({ kind: "import", scope: engine.scope() });
           }}
         >
-          Chèn mô phỏng
+          <Icon name="simulation" />
+          <span>Chèn mô phỏng</span>
         </button>
       ) : null}
       {request && request.scope === scope
@@ -86,7 +90,7 @@ export function InteractiveTools({
                 onClose={() => setRequest(null)}
               />
             </Suspense>,
-            document.body,
+            editor.getContainer().closest(".workspace") ?? document.body,
           )
         : null}
     </>

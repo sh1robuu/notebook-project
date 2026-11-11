@@ -14,19 +14,22 @@ import type { LocalWorkspace } from "../modules/workspace/local-workspace.ts";
 import { BoardEngine } from "../modules/board/engine.ts";
 import { PartialEraserTool } from "../modules/board/partial-eraser.ts";
 import { Toolbar } from "./Toolbar.tsx";
-import { SaveError, SaveStatus } from "./SaveStatus.tsx";
-import { LessonFiles } from "./LessonFiles.tsx";
+import { CommandBar } from "./CommandBar.tsx";
+import { closeToolDisclosures } from "./ToolDisclosures.tsx";
 import { Icon } from "./Icon.tsx";
 import { EquationDialog } from "./EquationDialog.tsx";
 import { ContextMenu } from "./ContextMenu.tsx";
 import { LessonSession } from "../modules/board/lesson-session.ts";
 import type { SurfaceId } from "../modules/workspace/lesson-view.ts";
 import { ScratchpadControls, WorkspaceLayout } from "./ScratchpadPane.tsx";
-import { PageManager } from "./PageManager.tsx";
+import {
+  PageManager,
+  PageNavigation,
+  PageThumbnailRail,
+} from "./PageManager.tsx";
 import { PaperBackground } from "./PaperBackground.tsx";
 import { LaserTool } from "../modules/board/laser.ts";
-import { PresentationControls } from "./PresentationControls.tsx";
-import { PdfImport } from "./PdfImport.tsx";
+import { PresentationExit } from "./PresentationControls.tsx";
 import { PdfSessionContext, PdfControls, PdfReadingLayer } from "./PdfPage.tsx";
 import {
   shapeUtils,
@@ -34,16 +37,13 @@ import {
   sdkOptions,
   sdkAssetUrls,
 } from "../modules/board/sdk-config.ts";
-import { ExportDialog } from "./ExportDialog.tsx";
-import { WordTerminal } from "./documents/WordTerminal.tsx";
 import { TeachingControls } from "./documents/TeachingControls.tsx";
 import { WordSourcesContext } from "../modules/documents/render.tsx";
 import { wordVisibility } from "../modules/documents/teaching.ts";
-import { PptxImport } from "./pptx/PptxImport.tsx";
 import { SlideControls } from "./pptx/SlideControls.tsx";
-import { lessonAddress, WorkspaceTools } from "./workspace/WorkspaceTools.tsx";
+import { lessonAddress } from "./workspace/WorkspaceTools.tsx";
 import { devicePreferences } from "../modules/workspace/preferences.ts";
-import { activityState } from "../modules/workspace/activity.ts";
+import "./notebook.css";
 const canvasComponents = { Background: PaperBackground };
 const customTools = [PartialEraserTool, LaserTool];
 export function BoardScreen({ workspace }: { workspace: LocalWorkspace }) {
@@ -52,7 +52,15 @@ export function BoardScreen({ workspace }: { workspace: LocalWorkspace }) {
       {},
     );
   const ui = useSyncExternalStore(session.subscribe, session.getSnapshot);
-  const preferences = useSyncExternalStore(devicePreferences.subscribe, devicePreferences.getSnapshot);
+  const shell = useRef<HTMLDivElement>(null);
+  useEffect(
+    () => (shell.current ? closeToolDisclosures(shell.current) : undefined),
+    [],
+  );
+  const preferences = useSyncExternalStore(
+    devicePreferences.subscribe,
+    devicePreferences.getSnapshot,
+  );
   useEffect(() => {
     const selected = new URLSearchParams(location.search).get("lesson");
     if (selected && selected !== workspace.lesson.id)
@@ -90,60 +98,76 @@ export function BoardScreen({ workspace }: { workspace: LocalWorkspace }) {
     header = active ?? main;
   return (
     <div
+      ref={shell}
       className="workspace"
       data-presenting={ui.presentation || ui.laser !== null}
       data-reduce-motion={preferences.value.reduceMotion}
     >
-      {header ? (
-        <Chrome engine={header} notice={workspace.recoveryNotice} />
-      ) : (
-        <header className="app-header">
-          <h1>{product.name}</h1>
-          <p role="status">Opening your board…</p>
-        </header>
-      )}
-      {main ? <ScratchpadControls session={session} /> : null}
-      {main ? <PresentationControls session={session} /> : null}
-      {main ? (
-        <PageManager key={ui.editorEpoch} engine={main}>
-          <div className="document-actions">
-            <PdfImport engine={main} />
-            <WordTerminal engine={main} />
-            <PptxImport engine={main} />
-            <ExportDialog engine={main} />
-            <PdfControls engine={main} />
-            <TeachingControls engine={main} />
-          </div>
-        </PageManager>
-      ) : null}
-      {main ? <SlideControls engine={main} /> : null}
-      <div className="work-area">
+      <PageManager engine={main}>
+        {header && main ? (
+          <CommandBar
+            engine={header}
+            main={main}
+            notice={workspace.recoveryNotice}
+          />
+        ) : (
+          <header className="command-bar board-opening">
+            <h1>{product.name}</h1>
+            <p role="status">Opening your board…</p>
+          </header>
+        )}
         {active && !(ui.reading && ui.active === "main") ? (
           <Toolbar engine={active} />
         ) : (
-          <aside className="palette" role="status">
+          <div className="drawing-bar drawing-status" role="status">
             {ui.reading && active
               ? "Reading PDF text. Use Annotate PDF to return to editing."
               : "Opening surface…"}
-          </aside>
+            {ui.reading && active ? (
+              <div className="draw-group scratch-command">
+                <ScratchpadControls session={session} section="toggle" />
+              </div>
+            ) : null}
+          </div>
         )}
-        <WorkspaceLayout session={session}>
-          <EditorSurface
-            key={"main:" + ui.editorEpoch}
-            session={session}
-            surface="main"
-            ready={ready}
-          />
-          {scratchMounted ? (
+        {main ? (
+          <div className="document-context">
+            <PdfControls engine={main} />
+            <TeachingControls engine={main} />
+            <SlideControls engine={main} />
+          </div>
+        ) : null}
+        {main ? (
+          <ScratchpadControls session={session} section="layout" />
+        ) : null}
+        {ui.extension || ui.message ? (
+          <div className="notebook-notice" role="status">
+            {ui.message || "Extension armed · swipe upward on the main board"}
+          </div>
+        ) : null}
+        <div className="work-area">
+          <PageThumbnailRail />
+          <WorkspaceLayout session={session}>
             <EditorSurface
-              key={"scratch:" + ui.editorEpoch}
+              key={"main:" + ui.editorEpoch}
               session={session}
-              surface="scratchpad"
+              surface="main"
               ready={ready}
             />
+            {scratchMounted ? (
+              <EditorSurface
+                key={"scratch:" + ui.editorEpoch}
+                session={session}
+                surface="scratchpad"
+                ready={ready}
+              />
+            ) : null}
+          </WorkspaceLayout>
+          {ui.presentation || ui.laser !== null ? (
+            <PresentationExit session={session} />
           ) : null}
-        </WorkspaceLayout>
-      </div>
+        </div>
+      </PageManager>
     </div>
   );
 }
@@ -238,57 +262,6 @@ function EditorSurface({
     </Tag>
   );
 }
-function Chrome({ engine, notice }: { engine: BoardEngine; notice?: string }) {
-  const state = useSyncExternalStore(engine.subscribe, engine.getSnapshot);
-  useEffect(() => {
-    const unload = (e: BeforeUnloadEvent) => {
-      if (engine.saving.status.phase !== "saved" || engine.isPointing() ||
-        engine.editing.state.isTextEditing || activityState.getSnapshot().count) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", unload);
-    return () => {
-      window.removeEventListener("beforeunload", unload);
-    };
-  }, [engine]);
-  return (
-    <>
-      <header className="app-header">
-        <div className="brand">
-          <img src="/mark.svg" width="30" height="30" alt="" />
-          <h1>{product.name}</h1>
-        </div>
-        <div className="lesson-identity">
-          <label className="sr-only" htmlFor="lesson-title">
-            Lesson title
-          </label>
-          <input
-            id="lesson-title"
-            aria-label="Lesson title"
-            value={state.title}
-            maxLength={120}
-            placeholder="Untitled lesson"
-            disabled={state.readOnly}
-            onChange={(e) => engine.setTitle(e.target.value)}
-          />
-          <SaveStatus engine={engine} />
-        </div>
-        <div className="workspace-actions">
-          <WorkspaceTools engine={engine} />
-          <LessonFiles engine={engine} />
-        </div>
-      </header>
-      <SaveError engine={engine} />
-      {notice ? (
-        <div className="recovery-notice" role="status">
-          {notice}
-        </div>
-      ) : null}
-    </>
-  );
-}
 function EraserCursor({
   engine,
   cursor,
@@ -314,9 +287,12 @@ function BoardFooter({ engine }: { engine: BoardEngine }) {
   );
   return (
     <footer className="board-footer">
-      <div className="board-scope">
+      <div className="notebook-tab">
+        <Icon name={engine.surface === "main" ? "notebook" : "scratch"} />
         <span>{engine.surface === "main" ? "Main board" : "Scratchpad"}</span>
-        <span className="dot-separator">·</span>
+      </div>
+      {engine.surface === "main" ? <PageNavigation /> : null}
+      <div className="board-scope">
         <span data-testid="stroke-count">
           {editing.ink.toLocaleString()}{" "}
           {editing.ink === 1 ? "stroke" : "strokes"}

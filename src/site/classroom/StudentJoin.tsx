@@ -239,7 +239,7 @@ function StudentRoom({
           <dt>Trạng thái phòng</dt>
           <dd>{roomState[room.state]}</dd>
         </div>
-        <div>
+        <div className="classroom-student-group">
           <dt>Nhóm của bạn</dt>
           <dd>{room.self.group?.name ?? "Chưa vào nhóm"}</dd>
         </div>

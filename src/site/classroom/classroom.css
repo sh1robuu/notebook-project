@@ -1,16 +1,24 @@
 .classroom {
-  --classroom-ground: #f3f5f4;
+  --classroom-ground: #f5f3f3;
   --classroom-paper: #fff;
-  --classroom-ink: #182127;
-  --classroom-muted: #52615e;
-  --classroom-edge: #dce2df;
-  --classroom-control: #b9c3bf;
+  --classroom-ink: #28262a;
+  --classroom-muted: #625d65;
+  --classroom-edge: #e6e2e5;
+  --classroom-control: #918a92;
+  --classroom-accent: #821a29;
+  --classroom-active: #f8edef;
+  --classroom-hover: #f2eff1;
+  --classroom-danger: #96231d;
+  --classroom-bar-height: 48px;
+  --classroom-target: 34px;
+  --classroom-radius: 6px;
+  --classroom-inset: 18px;
   min-height: 100dvh;
   background: var(--classroom-ground);
   color: var(--classroom-ink);
   font-family: "Be Vietnam Pro", system-ui, sans-serif;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .classroom :where(h1, h2, h3, p, ul, ol, dl) {
@@ -18,24 +26,19 @@
 }
 
 .classroom :where(h1, h2, h3) {
-  font-weight: 600;
-  letter-spacing: -0.035em;
+  font-weight: 650;
+  letter-spacing: -0.025em;
   overflow-wrap: anywhere;
 }
 
-.classroom h1 {
-  font-size: 26px;
-  line-height: 1.25;
-}
-
-.classroom h2 {
-  font-size: 20px;
-  line-height: 1.4;
+.classroom :where(h1, h2) {
+  font-size: 22px;
+  line-height: 1.3;
 }
 
 .classroom h3 {
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.4;
 }
 
 .classroom :where(button, input, select, textarea) {
@@ -48,148 +51,201 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  min-height: 40px;
-  padding: 8px 12px;
+  gap: 5px;
+  min-height: var(--classroom-target);
+  padding: 5px 10px;
   border: 1px solid var(--classroom-control);
-  border-radius: 6px;
+  border-radius: var(--classroom-radius);
   background: var(--classroom-paper);
   text-decoration: none;
-  line-height: 1.4;
+  line-height: 1.35;
   cursor: pointer;
   touch-action: manipulation;
 }
 
-.classroom button:hover,
-.classroom-button:hover {
-  background: #edf1ee;
+.classroom :is(button, .classroom-button, summary):hover {
+  background: var(--classroom-hover);
 }
 
 .classroom button:disabled {
-  color: #69756f;
-  background: #f4f6f4;
+  color: var(--classroom-muted);
+  background: #f6f4f5;
+  border-color: var(--classroom-edge);
   cursor: default;
 }
 
 .classroom .classroom-primary {
-  background: #182127;
-  border-color: #182127;
+  background: var(--classroom-accent);
+  border-color: var(--classroom-accent);
   color: #fff;
+  font-weight: 600;
 }
 
 .classroom .classroom-primary:hover {
-  background: #34433e;
+  background: #6c1220;
 }
 
 .classroom .classroom-primary:disabled {
-  color: #e1e7e3;
-  background: #64716a;
-  border-color: #64716a;
+  color: var(--classroom-muted);
+  background: #f6f4f5;
+  border-color: var(--classroom-edge);
 }
 
 .classroom .classroom-danger {
-  color: #a4231c;
-  border-color: #cba9a6;
+  color: var(--classroom-danger);
 }
 
 .classroom :where(input, select, textarea) {
   width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
+  min-height: var(--classroom-target);
+  padding: 5px 8px;
   border: 1px solid var(--classroom-control);
-  border-radius: 5px;
+  border-radius: var(--classroom-radius);
   background: var(--classroom-paper);
-  line-height: 1.5;
 }
 
-.classroom input:disabled,
-.classroom select:disabled {
-  opacity: 0.7;
+.classroom :is(input, select):disabled {
+  background: #f6f4f5;
 }
 
 .classroom label {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .classroom :where(a, button, input, select, summary, [tabindex]):focus-visible {
-  outline: 3px solid #1b6b60;
-  outline-offset: 3px;
+  outline: 2px solid var(--classroom-accent);
+  outline-offset: 2px;
 }
 
 .classroom a {
   color: inherit;
 }
 
+.classroom .skip-link:not(:focus) {
+  clip-path: inset(50%);
+}
+
 .classroom summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: var(--classroom-target);
+  padding: 4px 7px;
+  border-radius: var(--classroom-radius);
+  list-style: none;
   cursor: pointer;
   touch-action: manipulation;
 }
 
+.classroom summary::-webkit-details-marker {
+  display: none;
+}
+
+.classroom summary::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  margin-inline: 1px 2px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.classroom details[open] > summary::after {
+  transform: translateY(1px) rotate(225deg);
+}
+
 .classroom [role="alert"] {
-  color: #a4231c;
+  color: var(--classroom-danger);
 }
 
 .classroom-bar {
-  min-height: 72px;
-  padding: 12px clamp(20px, 3vw, 48px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  border-bottom: 1px solid var(--classroom-edge);
-  background: var(--classroom-paper);
+  gap: 12px;
+  min-height: var(--classroom-bar-height);
+  padding-inline: var(--classroom-inset);
 }
 
+.classroom-brand,
 .classroom-bar nav {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
+  min-width: 0;
 }
 
-.classroom-bar nav > a {
-  padding-block: 10px;
+.classroom-bar .wordmark {
+  min-height: var(--classroom-target);
+  gap: 7px;
+  font-size: 16px;
 }
 
-.classroom > main {
-  max-width: 1480px;
-  margin-inline: auto;
-  padding: 24px clamp(20px, 3vw, 48px) 48px;
+.classroom-brand h1 {
+  padding-inline-start: 14px;
+  border-inline-start: 1px solid var(--classroom-edge);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
-.classroom-title {
-  display: flex;
+.classroom-back {
+  display: inline-flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 22px;
+  gap: 5px;
+  min-height: var(--classroom-target);
+  padding-inline: 7px;
+  border-radius: var(--classroom-radius);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.classroom-back:hover {
+  background: var(--classroom-hover);
+}
+
+.classroom :is(.classroom-back, .classroom-rail-heading) svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
 }
 
 .classroom-account {
   position: relative;
+  min-width: 0;
 }
 
 .classroom-account > summary {
-  max-width: 240px;
-  min-height: 40px;
-  padding: 8px 0;
-  overflow-wrap: anywhere;
+  max-width: 235px;
+  font-weight: 600;
+}
+
+.classroom-account > summary span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .classroom-account > div {
   position: absolute;
   z-index: 10;
-  top: calc(100% + 8px);
+  top: calc(100% + 5px);
   right: 0;
-  width: min(320px, calc(100vw - 40px));
-  padding: 18px;
+  width: min(300px, calc(100vw - 32px));
+  padding: 14px;
   border: 1px solid var(--classroom-edge);
-  border-radius: 8px;
+  border-radius: var(--classroom-radius);
   background: var(--classroom-paper);
-  box-shadow: 0 8px 24px #18212712;
+  box-shadow: 0 6px 24px #28262a1a;
   overflow-wrap: anywhere;
 }
 
 .classroom-account p {
-  margin-block: 7px;
+  margin-top: 5px;
   color: var(--classroom-muted);
 }
 
@@ -199,180 +255,277 @@
 
 .classroom-grid {
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
+  /* The room sheet fills the width left by the rail and the 8px outer frame. */
+  grid-template-columns: 234px minmax(0, 1fr);
+  padding: 0 8px 8px 0;
+  min-height: calc(100dvh - var(--classroom-bar-height));
 }
 
-.classroom-panel {
+.classroom-room-list {
+  display: grid;
+  align-content: start;
+  align-self: start;
+  gap: 10px;
   min-width: 0;
-  border: 1px solid var(--classroom-edge);
-  border-radius: 8px;
-  padding: 20px;
-  background: var(--classroom-paper);
+  padding: 8px 10px 16px;
 }
 
-.classroom-panel > :is(h2, h3) + p {
-  margin-top: 10px;
-}
-
-.classroom-panel > p + :is(p, button, a) {
-  margin-top: 14px;
-}
-
-.classroom-panel > :is(h2, h3) + button {
-  margin-top: 14px;
-}
-
-.classroom-auth {
-  max-width: 600px;
-  padding: 28px;
-}
-
-.classroom-auth .classroom-button {
-  margin-block: 20px 6px;
-}
-
-.classroom-muted {
-  color: var(--classroom-muted);
-}
-
-.classroom-empty {
-  min-height: 190px;
-}
-
-.classroom-empty p {
-  max-width: 600px;
-}
-
-.classroom-actions {
+.classroom-rail-heading {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-top: 16px;
+  min-height: var(--classroom-target);
 }
 
-.classroom-actions button {
+.classroom-rail-heading h2 {
+  flex: 1;
+  min-width: 5.5ch;
+  font-size: 13px;
+}
+
+.classroom-rail-heading button {
   flex-shrink: 0;
+  font-size: 12px;
 }
 
-.classroom-form {
-  display: grid;
-  gap: 14px;
-  margin-top: 16px;
+.classroom-rail-heading .classroom-room-switch {
+  display: none;
 }
 
-.classroom-form > button {
-  justify-self: start;
-}
-
-.classroom-room-list h2 {
-  font-size: 16px;
+.classroom-room-list > .classroom-form,
+.classroom-room-list > .classroom-notice {
+  margin-top: 0;
 }
 
 .classroom-room-menu {
-  list-style: none;
-  padding: 0;
-  margin-top: 18px;
   display: grid;
   gap: 4px;
+  padding: 0;
+  list-style: none;
 }
 
 .classroom-room-menu button {
   display: block;
   width: 100%;
-  padding: 10px 12px;
+  padding: 7px 9px;
   border-color: transparent;
   background: transparent;
   text-align: left;
 }
 
 .classroom-room-menu button[aria-pressed="true"] {
-  background: #edf1ee;
+  background: var(--classroom-active);
+  border-inline-start: 2px solid var(--classroom-accent);
 }
 
-.classroom-room-menu span {
+.classroom-room-menu button[aria-pressed="true"] span {
+  color: var(--classroom-accent);
+  font-weight: 650;
+}
+
+.classroom-room-menu :is(span, small) {
   display: block;
   overflow-wrap: anywhere;
-  font-weight: 500;
 }
 
 .classroom-room-menu small {
-  display: block;
-  font-size: 12px;
   margin-top: 3px;
   color: var(--classroom-muted);
+  font-size: 12px;
+}
+
+.classroom-panel,
+.classroom-room {
+  min-width: 0;
+  background: var(--classroom-paper);
+}
+
+.classroom-room,
+.classroom-empty,
+.classroom-auth,
+.classroom-join > .classroom-panel {
+  border: 1px solid var(--classroom-edge);
+  border-radius: 10px;
 }
 
 .classroom-room {
-  min-width: 0;
-}
-
-.classroom-section-heading {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px 16px;
+  flex-direction: column;
 }
 
-.classroom-section-heading > h2 {
-  flex: 1 1 200px;
+.classroom-panel {
+  padding: var(--classroom-inset);
 }
 
-.classroom-connection {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
+.classroom-panel > :is(h2, h3, p) + p,
+.classroom-panel > :is(h2, h3, p) + button {
+  margin-top: 8px;
+}
+
+.classroom-auth {
+  width: min(calc(100% - 32px), 484px);
+  margin: clamp(24px, 7vh, 68px) auto;
+}
+
+.classroom-auth > a {
+  display: block;
+  width: fit-content;
+  margin-top: 14px;
+}
+
+.classroom-auth > .classroom-button {
+  display: inline-flex;
+}
+
+.classroom-auth > .classroom-button + p,
+.classroom-join-panel > .classroom-form + .classroom-muted {
+  margin-top: 10px;
+}
+
+.classroom-auth > p + a:not(.classroom-button) {
+  margin-top: 10px;
+}
+
+.classroom-empty {
+  align-self: stretch;
+}
+
+.classroom-muted {
   color: var(--classroom-muted);
 }
 
-.classroom-connection span {
-  height: 6px;
-  width: 6px;
+.classroom-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.classroom-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.classroom-form > button {
+  justify-self: start;
+}
+
+.classroom-section-heading,
+.classroom-room-bar,
+.classroom-room-meta,
+.classroom-room-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.classroom-section-heading > h2 {
+  flex: 1 1 210px;
+}
+
+.classroom-section-heading > p {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.classroom-room-heading {
+  border-bottom: 1px solid var(--classroom-edge);
+  border-radius: 10px 10px 0 0;
+  padding-block: 13px 8px;
+}
+
+.classroom-room-caption {
+  min-width: 0;
+  flex: 1 1 350px;
+}
+
+.classroom-room-meta {
+  justify-content: flex-start;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.classroom-room-bar .classroom-actions {
+  margin: 0;
+}
+
+.classroom-room-links {
+  justify-content: flex-start;
+  margin-top: 4px;
+}
+
+.classroom-room-links:empty {
+  display: none;
+}
+
+.classroom-connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--classroom-muted);
+  font-size: 12px;
+}
+
+.classroom-connection > span {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: #8a7960;
+  background: #97692c;
 }
 
 .classroom-connection [data-live="true"] {
-  background: #287758;
-}
-
-.classroom-room-heading > .classroom-muted {
-  margin-top: 5px;
+  background: #277455;
 }
 
 .classroom-settings {
-  margin-top: 18px;
+  flex: 1 0 100%;
 }
 
 .classroom-settings summary {
-  padding-block: 6px;
   color: var(--classroom-muted);
 }
 
 .classroom-settings .classroom-form {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   align-items: end;
+  max-width: 720px;
+  padding: 10px;
+  margin-top: 4px;
+  border: 1px solid var(--classroom-edge);
+  border-radius: var(--classroom-radius);
+}
+
+.classroom-quick-invite {
+  display: none;
 }
 
 .classroom-room-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 290px;
-  align-items: start;
-  gap: 20px;
-  margin-top: 20px;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) 314px;
+}
+
+.classroom-room-content .classroom-panel {
+  background: transparent;
 }
 
 .classroom-side {
   min-width: 0;
-  display: grid;
-  gap: 20px;
+  border-inline-start: 1px solid var(--classroom-edge);
 }
 
-.classroom-roster-list {
+.classroom-side > section + section {
+  border-top: 1px solid var(--classroom-edge);
+}
+
+.classroom-roster-list,
+.classroom-group-list {
   list-style: none;
   padding: 0;
   margin-top: 8px;
@@ -380,27 +533,23 @@
 
 .classroom-roster-list > li {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(100px, 130px) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(95px, 180px) auto;
   align-items: center;
-  gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--classroom-edge);
-}
-
-.classroom-roster-list > li:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
+  gap: 9px;
+  padding-block: 7px;
+  border-top: 1px solid var(--classroom-edge);
 }
 
 .classroom-person {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
 }
 
 .classroom-person > span {
-  flex: 0 0 18px;
+  flex: 0 0 2ch;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--classroom-muted);
   text-align: right;
@@ -408,7 +557,7 @@
 
 .classroom-person > strong {
   overflow-wrap: anywhere;
-  font-weight: 500;
+  font-weight: 550;
 }
 
 .classroom-person-actions {
@@ -418,16 +567,12 @@
 }
 
 .classroom-person-actions > button {
-  min-width: 34px;
-  padding-inline: 9px;
+  min-width: var(--classroom-target);
+  padding-inline: 6px;
 }
 
 .classroom-person-actions details {
   position: relative;
-}
-
-.classroom-person-actions summary {
-  padding: 8px;
 }
 
 .classroom-person-actions .classroom-form {
@@ -435,25 +580,29 @@
   z-index: 5;
   right: 0;
   top: 100%;
-  width: min(300px, calc(100vw - 48px));
-  margin-top: 6px;
-  padding: 16px;
+  width: min(286px, calc(100vw - 36px));
+  margin-top: 5px;
+  padding: 12px;
   border: 1px solid var(--classroom-edge);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px #18212712;
+  border-radius: var(--classroom-radius);
+  box-shadow: 0 6px 24px #28262a1a;
   background: var(--classroom-paper);
+}
+
+.classroom-invitation {
+  scroll-margin: 10px;
 }
 
 .classroom-qr {
   display: grid;
   justify-items: start;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 7px;
+  margin-top: 8px;
 }
 
 .classroom-qr > img {
   display: block;
-  width: 192px;
+  width: 176px;
   max-width: 100%;
   height: auto;
   justify-self: center;
@@ -461,107 +610,112 @@
 
 .classroom-qr > label {
   width: 100%;
+  font-size: 12px;
 }
 
 .classroom-code {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   width: 100%;
+  font-size: 12px;
 }
 
 .classroom-code code {
-  display: block;
   overflow-wrap: anywhere;
-  font-family: inherit;
-  font-variant-numeric: tabular-nums;
-  font-size: 17px;
-  font-weight: 500;
+  font-family: ui-monospace, monospace;
+  font-size: 14px;
+  font-weight: 550;
 }
 
-.classroom-group-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 10px;
+.classroom-qr > .classroom-muted {
+  font-size: 12px;
 }
 
 .classroom-group-list > li {
-  border-bottom: 1px solid var(--classroom-edge);
+  border-top: 1px solid var(--classroom-edge);
 }
 
 .classroom-group-list summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-block: 12px;
+  width: 100%;
+  gap: 8px;
 }
 
 .classroom-group-list summary > span {
+  flex: 1;
   overflow-wrap: anywhere;
 }
 
 .classroom-group-list small {
   flex-shrink: 0;
   color: var(--classroom-muted);
+  font-size: 12px;
 }
 
 .classroom-group-list .classroom-form {
-  margin-top: 4px;
-  margin-bottom: 16px;
+  margin: 3px 0 10px;
 }
 
 .classroom-notice {
-  margin-top: 16px;
-  padding: 12px;
-  border: 1px solid #d8bfbb;
-  border-radius: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-inline-start: 2px solid var(--classroom-danger);
+  background: #fff6f4;
 }
 
 .classroom-notice button {
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .classroom-room-heading > [role="status"] {
-  margin-top: 12px;
+  margin-top: 3px;
+  font-size: 12px;
 }
 
 .classroom dialog {
-  width: min(480px, calc(100vw - 32px));
+  width: min(460px, calc(100vw - 32px));
   margin: auto;
-  padding: 24px;
+  padding: var(--classroom-inset);
   border: 1px solid var(--classroom-edge);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--classroom-ink);
   background: var(--classroom-paper);
 }
 
 .classroom dialog p {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .classroom dialog::backdrop {
-  background: #18212770;
+  background: #28262a62;
 }
 
 .classroom-join {
-  max-width: 620px;
-  margin: 24px auto;
+  width: min(calc(100% - 32px), 492px);
+  margin: clamp(20px, 5vh, 52px) auto;
 }
 
-.classroom-join-panel {
-  padding: 26px;
+.classroom-title {
+  margin-bottom: 12px;
+}
+
+.classroom-join-panel > .classroom-section-heading {
+  align-items: baseline;
+}
+
+.classroom-join-panel > button {
+  margin-top: 14px;
 }
 
 .classroom-student-details {
-  margin-block: 24px;
+  margin-top: 12px;
 }
 
 .classroom-student-details > div {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 16px;
-  padding-block: 10px;
-  border-bottom: 1px solid var(--classroom-edge);
+  grid-template-columns: minmax(100px, 0.8fr) minmax(0, 1fr);
+  gap: 9px;
+  padding: 9px 0;
+  border-top: 1px solid var(--classroom-edge);
 }
 
 .classroom-student-details dt {
@@ -573,118 +727,155 @@
   overflow-wrap: anywhere;
 }
 
+.classroom-student-group dd {
+  font-weight: 650;
+}
+
 [data-classroom-away] .classroom-private {
   visibility: hidden;
 }
 
-@media (max-width: 1200px) {
-  .classroom-grid {
-    grid-template-columns: 210px minmax(0, 1fr);
-    gap: 16px;
-  }
-
-  .classroom-room-content {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .classroom-side {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 840px) {
+@media (max-width: 1100px) {
   .classroom-grid {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    padding: 0 8px 8px;
   }
 
   .classroom-room-list {
+    padding: 4px 8px 8px;
+  }
+
+  .classroom-room-list > .classroom-form {
+    max-width: 450px;
+  }
+
+  .classroom-rail-heading .classroom-room-switch {
+    display: inline-flex;
+  }
+
+  .classroom-room-menu[data-folded] {
+    display: none;
+  }
+}
+
+@media (max-width: 780px) {
+  .classroom-room-content {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+  }
+
+  .classroom-side {
+    border-inline-start: 0;
+    border-top: 1px solid var(--classroom-edge);
+  }
+
+  .classroom .classroom-quick-invite {
+    display: inline-flex;
+    min-height: var(--classroom-target);
+    align-items: center;
+    padding-inline: 7px;
+    color: var(--classroom-accent);
+  }
+}
+
+@media (min-width: 661px) and (max-width: 780px) {
+  .classroom-side {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 14px;
-    align-items: baseline;
-  }
-
-  .classroom-room-list > button {
-    margin-top: 0;
-  }
-
-  .classroom-room-list > :is(form, ul, p, div) {
-    grid-column: 1 / -1;
-  }
-
-  .classroom-room-menu {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 0;
+  }
+
+  .classroom-side > section + section {
+    border-top: 0;
+    border-inline-start: 1px solid var(--classroom-edge);
+  }
+}
+
+@media (max-width: 600px), (pointer: coarse) {
+  .classroom {
+    --classroom-target: 44px;
+    --classroom-bar-height: 52px;
   }
 }
 
 @media (max-width: 600px) {
-  .classroom-bar {
-    gap: 12px;
-    min-height: 64px;
-    padding: 10px 16px;
+  .classroom {
+    --classroom-inset: 14px;
   }
 
-  .classroom-bar .wordmark {
-    font-size: 17px;
-  }
-
-  .classroom-bar .wordmark img {
-    width: 25px;
-    height: 25px;
-  }
-
+  .classroom-bar,
+  .classroom-brand,
   .classroom-bar nav {
-    gap: 12px;
+    gap: 5px;
+  }
+
+  .classroom-brand h1 {
+    padding-inline-start: 7px;
+  }
+
+  .classroom-back,
+  .classroom-account > summary {
     font-size: 12px;
+  }
+
+  .classroom-back > svg {
+    display: none;
   }
 
   .classroom-account > summary {
-    max-width: 120px;
-    font-size: 12px;
+    max-width: min(30vw, 120px);
   }
 
-  .classroom > main {
-    padding: 20px 16px 32px;
+  .classroom-room-caption {
+    flex-basis: 100%;
   }
 
-  .classroom :where(button, .classroom-button, select, input) {
-    min-height: 44px;
+  .classroom-settings {
+    flex-basis: auto;
   }
 
-  .classroom-panel {
-    padding: 16px;
+  .classroom-settings[open] {
+    flex-basis: 100%;
   }
 
   .classroom-settings .classroom-form {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .classroom-side {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .classroom-side > section {
-    width: 100%;
-  }
-
   .classroom-roster-list > li {
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px 8px;
-    padding-block: 14px;
+    gap: 6px 8px;
   }
 
   .classroom-person {
     grid-column: 1 / -1;
   }
 
-  .classroom-join {
-    margin-block: 12px;
+  .classroom-join .classroom-form input {
+    font-size: 16px;
   }
 
-  .classroom-student-details > div {
-    grid-template-columns: minmax(100px, 0.7fr) minmax(0, 1fr);
-    gap: 12px;
+  .classroom-join-panel > .classroom-section-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .classroom-join-panel > .classroom-section-heading > h2 {
+    flex: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .classroom:not([data-student]) .wordmark span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .classroom:not([data-student]) .wordmark {
+    justify-content: center;
+    min-width: var(--classroom-target);
   }
 }

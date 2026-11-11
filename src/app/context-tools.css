@@ -1,0 +1,367 @@
+/* Panels share the workspace's paper, type and selection colors. */
+dialog.context-panel {
+  --panel-inset: 14px;
+  --panel-gap: 8px;
+  box-sizing: border-box;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: var(--panel-inset);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: 8px;
+  background: var(--paper);
+  font-size: 13px;
+  box-shadow: 0 8px 28px #25262a25;
+}
+
+dialog.context-panel::backdrop {
+  background: #25262a2b;
+}
+
+dialog.context-panel.context-panel-edge::backdrop {
+  background: #25262a12;
+}
+
+dialog.context-panel h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 650;
+}
+
+.context-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--panel-gap);
+  margin-bottom: 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--edge);
+}
+
+dialog.context-panel :is(button, select, input:not([type="checkbox"])) {
+  min-height: 32px;
+}
+
+dialog.context-panel button {
+  padding: 4px 9px;
+}
+
+dialog.context-panel button.context-panel-close {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+dialog.context-panel button.context-panel-close:hover {
+  background: var(--frame);
+}
+
+.context-panel-close svg {
+  width: 17px;
+  height: 17px;
+}
+
+dialog.context-panel .dialog-actions {
+  flex-wrap: wrap;
+  gap: var(--panel-gap);
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--edge);
+}
+
+dialog.context-panel input[type="file"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 5px;
+  color: var(--muted);
+  font: inherit;
+}
+
+dialog.context-panel input[type="file"]::file-selector-button {
+  min-height: 32px;
+  margin-inline-end: 8px;
+  padding: 4px 9px;
+  border: 1px solid var(--control);
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (min-width: 721px) {
+  dialog.context-panel.context-panel-edge {
+    inset: 94px 12px 40px auto;
+    height: max-content;
+    max-height: calc(100dvh - 134px);
+    margin: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  dialog.context-panel.context-panel-edge {
+    inset: auto 0 0;
+    width: min(100vw, 620px);
+    max-width: 100%;
+    max-height: calc(100dvh - 48px);
+    margin: 0 auto;
+    padding-bottom: max(var(--panel-inset), env(safe-area-inset-bottom));
+    border-radius: 10px 10px 0 0;
+  }
+}
+
+@media (pointer: coarse) {
+  dialog.context-panel :is(button, select, input:not([type="checkbox"])),
+  dialog.context-panel input[type="file"]::file-selector-button {
+    min-height: 44px;
+  }
+
+  dialog.context-panel button.context-panel-close {
+    width: 44px;
+  }
+}
+
+dialog.document-import-panel,
+dialog.export-panel {
+  width: min(510px, calc(100vw - 24px));
+}
+
+.context-panel .export-fields {
+  gap: 8px;
+}
+
+.context-panel .export-fields :is(select, input) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.equation-panel textarea {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  resize: vertical;
+}
+
+dialog.context-panel.word-dialog {
+  width: min(1060px, calc(100vw - 24px));
+}
+
+.word-dialog .word-heading {
+  margin-bottom: 0;
+}
+
+.word-document-actions {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.word-draft-status {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.word-draft-status > p:first-child:not([role]) {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.word-dialog .word-workspace {
+  gap: 14px;
+}
+
+.word-dialog :is(.word-editor, .word-preview-panel) {
+  gap: 8px;
+}
+
+.word-dialog .word-preview-panel {
+  padding-left: 14px;
+}
+
+.word-workspace h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.word-dialog .word-import-review {
+  align-items: center;
+  background: var(--frame);
+  border-color: var(--edge);
+  border-radius: 5px;
+}
+
+.word-dialog .word-import-review h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.workspace .pdf-controls,
+.workspace .word-teaching-controls {
+  padding: 2px 8px;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.workspace .word-teaching-controls {
+  flex-wrap: wrap;
+  white-space: normal;
+}
+
+.word-teaching-controls small {
+  color: var(--muted);
+}
+
+.workspace .pptx-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--edge);
+  border-radius: 0;
+  font-size: 12px;
+}
+
+.workspace .pptx-status {
+  gap: 3px 8px;
+  margin: 0;
+}
+
+.workspace .pptx-control-scroll {
+  min-width: 0;
+  gap: 2px;
+  padding: 2px;
+}
+
+.workspace .pptx-control-scroll button,
+.workspace :is(.pdf-controls, .word-teaching-controls) button.context-icon {
+  display: inline-grid;
+  place-items: center;
+  min-height: 30px;
+  min-width: 30px;
+  padding: 4px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.workspace .pptx-control-scroll button:hover:not(:disabled),
+.workspace
+  :is(.pdf-controls, .word-teaching-controls)
+  button.context-icon:hover:not(:disabled) {
+  border-color: var(--edge);
+  background: var(--frame);
+}
+
+.workspace .pptx-control-label {
+  display: none;
+}
+
+.workspace .pptx-control-icon {
+  display: flex;
+}
+
+.workspace .pptx-control-icon svg,
+.workspace .context-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.workspace .math-tools {
+  position: relative;
+  margin: 0;
+}
+
+.workspace .math-tools summary,
+.workspace button.interactive-launch {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.workspace .math-tools summary svg,
+.workspace button.interactive-launch svg {
+  width: 16px;
+  height: 16px;
+}
+
+.workspace .math-tool-list {
+  position: absolute;
+  z-index: 31;
+  top: calc(100% + 4px);
+  left: 0;
+  display: grid;
+  width: max-content;
+  min-width: 150px;
+  padding: 4px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: var(--paper);
+  box-shadow: 0 5px 16px #25262a21;
+}
+
+.workspace .math-tool-list button {
+  min-height: 32px;
+  border-color: transparent;
+  background: transparent;
+  text-align: start;
+}
+
+.workspace .math-tools[open] > summary,
+.workspace .math-tool-list button:hover:not(:disabled) {
+  background: var(--frame);
+}
+
+@media (min-width: 1181px) {
+  .workspace .math-tools summary > span,
+  .workspace button.interactive-launch span {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .workspace .math-tool-list {
+    right: auto;
+    left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .word-dialog .word-preview-panel {
+    padding-left: 0;
+  }
+}
+
+@media (pointer: coarse) {
+  .workspace
+    :is(
+      .pptx-control-scroll,
+      .pdf-controls,
+      .word-teaching-controls,
+      .math-tool-list
+    )
+    :is(button, select),
+  .workspace .math-tools summary,
+  .workspace button.interactive-launch {
+    min-height: 44px;
+  }
+  .workspace .pptx-control-scroll button,
+  .workspace :is(.pdf-controls, .word-teaching-controls) button.context-icon,
+  .workspace .math-tools summary,
+  .workspace button.interactive-launch {
+    min-width: 44px;
+  }
+}

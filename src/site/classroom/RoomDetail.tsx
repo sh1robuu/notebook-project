@@ -14,6 +14,7 @@ import {
   useLiveRoom,
 } from "../../modules/classroom/state.ts";
 import {
+  ClassroomDisclosure,
   CommandNotice,
   RoomConnectionStatus,
   roomMode,
@@ -103,31 +104,44 @@ export function RoomDetail({
   return (
     <section className="classroom-room" aria-labelledby="classroom-room-title">
       <div className="classroom-panel classroom-room-heading">
-        <div className="classroom-section-heading">
-          <h2 id="classroom-room-title">{room.title}</h2>
-          <RoomConnectionStatus state={live.connection} />
+        <div className="classroom-room-bar">
+          <div className="classroom-room-caption">
+            <h2 id="classroom-room-title">{room.title}</h2>
+            <div className="classroom-room-meta">
+              <p className="classroom-muted">
+                {roomState[room.state]} · {roomMode[room.mode]}
+              </p>
+              <RoomConnectionStatus state={live.connection} />
+            </div>
+          </div>
+          <RoomControls
+            state={room.state}
+            act={command}
+            confirm={setConfirmation}
+            disabled={mutation.busy}
+          />
         </div>
-        <p className="classroom-muted">
-          {roomState[room.state]} · {roomMode[room.mode]}
-        </p>
-        <RoomControls
-          state={room.state}
-          act={command}
-          confirm={setConfirmation}
-          disabled={mutation.busy}
-        />
-        {editable && (
-          <details className="classroom-settings">
-            <summary>Cài đặt phòng</summary>
-            <RoomFields
-              key={room.title + "\0" + room.mode}
-              initial={room}
-              label="Lưu cài đặt"
-              submit={(values) => command({ type: "configure", ...values })}
-              disabled={mutation.busy}
-            />
-          </details>
-        )}
+        <div className="classroom-room-links">
+          {room.state === "open" && (
+            <a className="classroom-quick-invite" href="#classroom-invitation">
+              Đến mã mời
+            </a>
+          )}
+          {editable && (
+            <ClassroomDisclosure
+              className="classroom-settings"
+              label="Cài đặt phòng"
+            >
+              <RoomFields
+                key={room.title + "\0" + room.mode}
+                initial={room}
+                label="Lưu cài đặt"
+                submit={(values) => command({ type: "configure", ...values })}
+                disabled={mutation.busy}
+              />
+            </ClassroomDisclosure>
+          )}
+        </div>
         <CommandNotice
           {...mutation}
           retry={mutation.canRetry ? mutation.retry : undefined}
@@ -202,7 +216,11 @@ function RoomControls({
     <div className="classroom-actions">
       <button
         type="button"
-        className="classroom-primary"
+        className={
+          state === "draft" || state === "ended"
+            ? "classroom-primary"
+            : undefined
+        }
         disabled={disabled}
         onClick={() => act({ type: next[0] })}
       >
@@ -284,6 +302,8 @@ function Invitations({
     <section
       className="classroom-panel classroom-invitation"
       aria-labelledby={heading}
+      id="classroom-invitation"
+      tabIndex={-1}
     >
       <h3 id={heading}>Mời học sinh</h3>
       {invitation ? (
@@ -299,6 +319,7 @@ function Invitations({
         <div className="classroom-actions">
           <button
             type="button"
+            className={invitation ? undefined : "classroom-primary"}
             disabled={disabled}
             onClick={() => act({ type: "rotateInvitation" })}
           >

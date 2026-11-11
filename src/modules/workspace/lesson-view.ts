@@ -6,6 +6,8 @@ export type Paper = {
   color: "white" | "dark" | "green";
   width: number;
   height: number;
+  pattern?: "ruled" | "grid" | "dotted";
+  titleGuide?: boolean;
   sourceId?: string;
   pageIndex?: number;
   slideId?: string;
@@ -21,6 +23,13 @@ export const defaultPaper = (): Paper => ({
   color: "white",
   width: 1280,
   height: 960,
+});
+export const defaultNotebookPaper = (
+  color: Paper["color"] = "white",
+): Paper => ({
+  ...defaultPaper(),
+  color,
+  ...(color === "white" ? { pattern: "ruled", titleGuide: true } : {}),
 });
 export const defaultView = (): LessonView => ({
   mainCameras: {},
@@ -40,7 +49,14 @@ export function validatePaper(value: unknown): Paper {
         Number.isFinite(n) &&
         n >= (value.kind === "blank" ? 64 : 1) &&
         n <= 100_000,
-    )
+    ) ||
+    (value.kind === "blank" &&
+      ((value.pattern !== undefined &&
+        value.pattern !== "ruled" &&
+        value.pattern !== "grid" &&
+        value.pattern !== "dotted") ||
+        (value.titleGuide !== undefined &&
+          typeof value.titleGuide !== "boolean")))
   )
     throw new WorkspaceError(
       "paper",
@@ -70,6 +86,14 @@ export function validatePaper(value: unknown): Paper {
     color: value.color as Paper["color"],
     width: Number(value.width),
     height: Number(value.height),
+    ...(value.kind === "blank" && value.pattern !== undefined
+      ? { pattern: value.pattern as Paper["pattern"] }
+      : {}),
+    ...(value.kind === "blank" &&
+    value.pattern === "ruled" &&
+    value.titleGuide === true
+      ? { titleGuide: true }
+      : {}),
     ...(value.kind === "pdf"
       ? {
           sourceId: value.sourceId as string,

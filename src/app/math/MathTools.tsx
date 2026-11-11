@@ -1,6 +1,8 @@
 import { lazy, Suspense, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { BoardEngine } from "../../modules/board/engine.ts";
 import type { MathPanelRequest } from "../../modules/board/editing.ts";
+import { Icon } from "../Icon.tsx";
 const MathPanel = lazy(() => import("./MathPanel.tsx"));
 const tools = [
   ["graph", "Function graph"],
@@ -22,8 +24,17 @@ export function MathTools({
   const editing = engine.editing;
   return (
     <>
-      <details className="math-tools" ref={disclosure}>
-        <summary ref={summary}>Math tools</summary>
+      <details className="math-tools" data-tool-disclosure ref={disclosure}>
+        <summary
+          className="chrome-control"
+          ref={summary}
+          role="button"
+          aria-label="Math tools"
+          title="Math tools"
+        >
+          <Icon name="graph" />
+          <span>Math tools</span>
+        </summary>
         <div className="math-tool-list">
           {tools.map(([kind, label]) => (
             <button
@@ -41,22 +52,26 @@ export function MathTools({
           ))}
         </div>
       </details>
-      {request ? (
-        <Suspense fallback={<p role="status">Opening math tools…</p>}>
-          <MathPanel
-            key={
-              request.scope +
-              ":" +
-              request.kind +
-              ":" +
-              (request.shape?.id ?? "new")
-            }
-            request={request}
-            engine={engine}
-            readOnly={readOnly}
-          />
-        </Suspense>
-      ) : null}
+      {request
+        ? createPortal(
+            <Suspense fallback={<p role="status">Opening math tools…</p>}>
+              <MathPanel
+                key={
+                  request.scope +
+                  ":" +
+                  request.kind +
+                  ":" +
+                  (request.shape?.id ?? "new")
+                }
+                request={request}
+                engine={engine}
+                readOnly={readOnly}
+              />
+            </Suspense>,
+            engine.pages.editor.getContainer().closest(".workspace") ??
+              document.body,
+          )
+        : null}
     </>
   );
 }

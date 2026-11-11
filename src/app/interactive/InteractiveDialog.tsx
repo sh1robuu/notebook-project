@@ -11,6 +11,8 @@ import type { BoardEngine } from "../../modules/board/engine.ts";
 import { scopedInteractive } from "../../modules/interactive/board.ts";
 import { InsertInteractive } from "./InsertInteractive.tsx";
 import { MaterialPanel } from "./MaterialPanel.tsx";
+import { Icon } from "../Icon.tsx";
+import "../context-tools.css";
 import "./interactive.css";
 
 export type InteractiveRequest =
@@ -62,7 +64,11 @@ export default function InteractiveDialog({
   return (
     <dialog
       ref={dialog}
-      className="interactive-dialog"
+      className={
+        request.kind === "import"
+          ? "context-panel context-panel-edge interactive-dialog"
+          : "context-panel interactive-dialog"
+      }
       data-expanded={large}
       data-docked={docked}
       aria-labelledby={id}
@@ -78,7 +84,7 @@ export default function InteractiveDialog({
         }
       }}
     >
-      <header className="interactive-heading">
+      <header className="context-panel-heading interactive-heading">
         <h2 id={id}>{title}</h2>
         <div className="interactive-actions">
           {request.kind === "material" && shape ? (
@@ -105,8 +111,15 @@ export default function InteractiveDialog({
               </button>
             </>
           ) : null}
-          <button type="button" ref={closeButton} onClick={onClose}>
-            Đóng
+          <button
+            type="button"
+            ref={closeButton}
+            className="context-panel-close"
+            aria-label="Đóng"
+            title="Đóng (Esc)"
+            onClick={onClose}
+          >
+            <Icon name="close" />
           </button>
         </div>
       </header>

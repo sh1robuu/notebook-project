@@ -21,22 +21,24 @@ export function SaveStatus({ engine }: { engine: BoardEngine }) {
       {status.phase === "error" ? (
         <>
           <span className="status-dot" />
-          Not saved · storage error
+          <span className="save-label">Not saved · storage error</span>
         </>
       ) : state.readOnly ? (
         <>
           <span className="status-dot" />
-          Read-only tab
+          <span className="save-label">Read-only tab</span>
         </>
       ) : status.phase === "saved" ? (
         <>
           <Icon name="check" />
-          Saved on this device
+          <span className="save-label">Saved on this device</span>
         </>
       ) : (
         <>
           <span className="status-dot" />
-          {status.pending ? "Saving soon · unsaved changes" : "Saving…"}
+          <span className="save-label">
+            {status.pending ? "Saving soon · unsaved changes" : "Saving…"}
+          </span>
         </>
       )}
       {status.savedAt !== undefined &&

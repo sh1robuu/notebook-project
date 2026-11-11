@@ -6,6 +6,8 @@ import { MathWorkerClient } from "../../modules/math/worker-client.ts";
 import { GraphDialog } from "./GraphDialog.tsx";
 import { VariationDialog } from "./VariationDialog.tsx";
 import { Calculator } from "./Calculator.tsx";
+import { Icon } from "../Icon.tsx";
+import "../context-tools.css";
 import "./math.css";
 
 export default function MathPanel({
@@ -80,8 +82,8 @@ export default function MathPanel({
     <dialog
       className={
         request.kind === "calculator"
-          ? "math-dialog calculator-dialog"
-          : "math-dialog"
+          ? "context-panel context-panel-edge math-dialog calculator-dialog"
+          : "context-panel context-panel-edge math-dialog"
       }
       ref={dialog}
       aria-labelledby={id}
@@ -90,10 +92,16 @@ export default function MathPanel({
         close();
       }}
     >
-      <header className="math-dialog-header">
+      <header className="context-panel-heading math-dialog-header">
         <h2 id={id}>{title}</h2>
-        <button type="button" onClick={close}>
-          Close
+        <button
+          type="button"
+          className="context-panel-close"
+          aria-label="Close"
+          title="Close (Esc)"
+          onClick={close}
+        >
+          <Icon name="close" />
         </button>
       </header>
       {panel}

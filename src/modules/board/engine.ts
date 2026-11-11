@@ -105,7 +105,10 @@ export class BoardEngine {
     this.editorEpoch = session.state.editorEpoch;
     const preferences = devicePreferences.getSnapshot().value;
     this.#ink = { color: preferences.penColor, size: preferences.penSize };
-    this.#highlighter = { color: preferences.highlighterColor, size: preferences.highlighterSize };
+    this.#highlighter = {
+      color: preferences.highlighterColor,
+      size: preferences.highlighterSize,
+    };
     this.#editor = editor;
     this.#dispose.push(bindWordSources(editor, () => session.wordSources));
     this.#dispose.push(
@@ -372,7 +375,10 @@ export class BoardEngine {
   applyDevicePreferences(preferences: WorkspacePreferences) {
     if (this.isPointing()) return false;
     this.#ink = { color: preferences.penColor, size: preferences.penSize };
-    this.#highlighter = { color: preferences.highlighterColor, size: preferences.highlighterSize };
+    this.#highlighter = {
+      color: preferences.highlighterColor,
+      size: preferences.highlighterSize,
+    };
     this.setTouchMode(preferences.touchMode);
     this.#applyStyle();
     return true;
@@ -511,8 +517,8 @@ export class BoardEngine {
   getLesson(): Lesson {
     return this.session.getLesson();
   }
-  restore(candidate: Lesson) {
-    return this.session.restore(candidate);
+  restore(candidate: Lesson, pdfPasswords?: Readonly<Record<string, string>>) {
+    return this.session.restore(candidate, pdfPasswords);
   }
   previousLesson() {
     return this.session.previousLesson();

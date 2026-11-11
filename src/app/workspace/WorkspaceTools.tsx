@@ -8,13 +8,15 @@ import {
 import type { BoardEngine } from "../../modules/board/engine.ts";
 import type { LessonListEntry } from "../../modules/workspace/local-workspace.ts";
 import { makeLesson, blankDrawing } from "../../modules/workspace/model.ts";
-import { defaultPaper } from "../../modules/workspace/lesson-view.ts";
+import { defaultNotebookPaper } from "../../modules/workspace/lesson-view.ts";
 import { devicePreferences } from "../../modules/workspace/preferences.ts";
 import { prepareWorkspaceForNavigation } from "../../modules/workspace/activity.ts";
 import { WorkspaceSettings } from "./WorkspaceSettings.tsx";
 import { WorkspaceHelp } from "./WorkspaceHelp.tsx";
 import { WorkspaceOffline, formatStorage } from "./WorkspaceOffline.tsx";
 import { classroomEnabled } from "../../config/classroom.ts";
+import { Icon } from "../Icon.tsx";
+import "../context-tools.css";
 import "./workspace-tools.css";
 
 type Panel = "lessons" | "settings" | "offline" | "help" | "recovery";
@@ -180,7 +182,7 @@ export function WorkspaceTools({ engine }: { engine: BoardEngine }) {
       if (page?.typeName === "page")
         page.meta = {
           ...page.meta,
-          paper: { ...defaultPaper(), color: preferences.paperColor },
+          paper: defaultNotebookPaper(preferences.paperColor),
         };
       draft.view.layout.dock = preferences.scratchDock;
       await session.restore(draft);
@@ -236,14 +238,16 @@ export function WorkspaceTools({ engine }: { engine: BoardEngine }) {
         type="button"
         className="workspace-trigger"
         aria-label="Bài giảng & cài đặt"
+        title="Bài giảng & cài đặt"
         onClick={() => show("lessons")}
       >
+        <Icon name="notebook" />
         <span className="workspace-trigger-full">Bài giảng &amp; cài đặt</span>
         <span className="workspace-trigger-compact">Bài giảng</span>
       </button>
       <dialog
         ref={dialog}
-        className="workspace-tools"
+        className="context-panel context-panel-edge workspace-tools"
         lang="vi"
         aria-labelledby={title}
         onCancel={(event) => {
@@ -263,10 +267,17 @@ export function WorkspaceTools({ engine }: { engine: BoardEngine }) {
       >
         {open ? (
           <>
-            <header className="workspace-dialog-header">
+            <header className="context-panel-heading workspace-dialog-header">
               <h2 id={title}>Không gian cá nhân</h2>
-              <button type="button" onClick={close} disabled={busy}>
-                Đóng
+              <button
+                type="button"
+                className="context-panel-close"
+                aria-label="Đóng"
+                title="Đóng (Esc)"
+                onClick={close}
+                disabled={busy}
+              >
+                <Icon name="close" />
               </button>
             </header>
             <nav className="workspace-tabs" aria-label="Mục không gian cá nhân">

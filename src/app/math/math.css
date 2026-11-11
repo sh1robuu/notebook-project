@@ -1,26 +1,27 @@
-.math-dialog {
-  box-sizing: border-box;
-  width: min(960px, calc(100vw - 32px));
-  max-height: calc(100dvh - 32px);
-  padding: 22px;
-  overflow: auto;
-  background: #fff;
+dialog.math-dialog {
+  width: min(590px, calc(100vw - 24px));
 }
-.math-dialog.calculator-dialog {
-  width: min(510px, calc(100vw - 24px));
+dialog.math-dialog.calculator-dialog {
+  width: min(414px, calc(100vw - 24px));
 }
 .math-dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-.math-dialog-header h2 {
-  margin: 0;
+  position: sticky;
+  top: calc(-1 * var(--panel-inset));
+  z-index: 2;
+  padding-top: 4px;
+  background: var(--paper);
 }
 .math-panel-body {
   min-width: 0;
+}
+dialog.math-dialog .dialog-actions {
+  position: sticky;
+  bottom: calc(-1 * var(--panel-inset));
+  z-index: 1;
+  margin-inline: calc(-1 * var(--panel-inset));
+  margin-bottom: calc(-1 * var(--panel-inset));
+  padding: 8px var(--panel-inset) max(8px, env(safe-area-inset-bottom));
+  background: var(--paper);
 }
 .math-source {
   display: block;
@@ -32,7 +33,7 @@
 .math-field-grid input:not([type="checkbox"]) {
   box-sizing: border-box;
   min-width: 0;
-  min-height: 38px;
+  min-height: 32px;
   padding: 6px 8px;
   border: 1px solid var(--edge);
   border-radius: 6px;
@@ -62,9 +63,9 @@
 }
 .math-graph-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(170px, 225px);
+  grid-template-columns: minmax(0, 1fr) 170px;
   align-items: start;
-  gap: 16px;
+  gap: 10px;
 }
 .math-graph-area {
   min-width: 0;
@@ -73,8 +74,8 @@
 .math-empty-preview,
 .math-table-preview {
   border: 1px solid var(--edge);
-  border-radius: 8px;
-  background: #f6f8f8;
+  border-radius: 5px;
+  background: var(--frame);
 }
 .math-plot {
   position: relative;
@@ -91,7 +92,7 @@
 .math-empty-preview {
   display: grid;
   place-items: center;
-  min-height: 230px;
+  min-height: 180px;
   color: var(--muted);
 }
 .math-crop {
@@ -109,18 +110,14 @@
   gap: 6px;
   margin-top: 10px;
 }
-.math-view-tools button,
-.math-table-options button {
-  min-height: 38px;
-}
 .math-graph-settings {
   display: grid;
-  gap: 10px;
+  gap: 7px;
 }
 .math-graph-settings fieldset {
   min-width: 0;
   margin: 0;
-  padding: 8px;
+  padding: 6px;
   border: 1px solid var(--edge);
   border-radius: 6px;
 }
@@ -131,7 +128,7 @@
 .math-field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
 .math-field-grid label {
   min-width: 0;
@@ -169,7 +166,7 @@
   overflow: auto;
 }
 .math-table-preview svg {
-  min-width: 520px;
+  min-width: 500px;
 }
 .math-inspection {
   margin-top: 12px;
@@ -199,10 +196,10 @@
   height: 32px;
 }
 .calculator-display {
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--edge);
-  border-radius: 8px;
-  background: #f4f7f6;
+  border-radius: 5px;
+  background: var(--frame);
 }
 .calculator-display label {
   display: block;
@@ -219,25 +216,21 @@
 .calculator-keys {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
-  margin-top: 12px;
+  gap: 5px;
+  margin-top: 10px;
 }
-.calculator-keys button {
+.math-dialog .calculator-keys button {
   min-width: 0;
-  min-height: 40px;
   padding-inline: 3px;
+  font-size: 12px;
 }
 .angle-modes button[aria-pressed="true"],
 .math-view-tools button[aria-pressed="true"] {
-  background: #dceee9;
-  color: #143d34;
-  border-color: #357369;
+  background: var(--selected);
+  color: var(--accent);
+  border-color: var(--accent);
 }
-@media (max-width: 690px) {
-  .math-dialog {
-    width: calc(100vw - 24px);
-    padding: 14px;
-  }
+@media (max-width: 600px) {
   .math-graph-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -248,8 +241,5 @@
 @media (max-width: 410px) {
   .math-graph-settings {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .calculator-keys button {
-    font-size: 12px;
   }
 }

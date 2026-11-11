@@ -21,13 +21,16 @@ export function EquationDialog({ engine }: { engine: BoardEngine }) {
   return (
     <dialog
       ref={dialog}
+      className="context-panel context-panel-edge equation-panel"
       aria-labelledby={id + "-title"}
       onCancel={(e) => {
         e.preventDefault();
         c.closeEquation();
       }}
     >
-      <h2 id={id + "-title"}>Editable equation</h2>
+      <header className="context-panel-heading">
+        <h2 id={id + "-title"}>Editable equation</h2>
+      </header>
       <label htmlFor={id + "-source"}>LaTeX source</label>
       <textarea
         id={id + "-source"}

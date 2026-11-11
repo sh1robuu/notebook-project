@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import type { LessonSession } from "../modules/board/lesson-session.ts";
-export function ScratchpadControls({ session }: { session: LessonSession }) {
+import { Icon } from "./Icon.tsx";
+export function ScratchpadControls({
+  session,
+  section,
+}: {
+  session: LessonSession;
+  section: "toggle" | "layout";
+}) {
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot),
     layout = state.view.layout;
   const [clearing, setClearing] = useState(false),
@@ -14,9 +21,13 @@ export function ScratchpadControls({ session }: { session: LessonSession }) {
     state.view.hidden.scratch || state.presentation || state.laser !== null;
   const update = (value: Partial<typeof layout>) =>
     session.updateView({ layout: { ...layout, ...value } });
-  return (
-    <nav className="surface-controls" aria-label="Workspace surfaces">
+  if (section === "toggle")
+    return (
       <button
+        type="button"
+        aria-label={layout.open ? "Close scratchpad" : "Open scratchpad"}
+        title={layout.open ? "Close scratchpad" : "Open scratchpad"}
+        aria-pressed={layout.open}
         onClick={() => {
           if (layout.open) {
             session.engines.get("scratchpad")?.cancel();
@@ -26,68 +37,78 @@ export function ScratchpadControls({ session }: { session: LessonSession }) {
           if (!layout.open) session.activate("scratchpad");
         }}
       >
-        {layout.open ? "Close scratchpad" : "Open scratchpad"}
+        <Icon name={layout.open ? "scratchClose" : "scratch"} />
       </button>
-      {layout.open ? (
-        <>
-          <button
-            aria-pressed={state.active === "main"}
-            onClick={() => session.activate("main")}
-          >
-            Main board
-          </button>
-          <button
-            aria-pressed={state.active === "scratchpad"}
-            onClick={() => session.activate("scratchpad")}
-          >
-            Scratchpad
-          </button>
-          {!hidden ? (
-            <>
-              <label>
-                Dock{" "}
-                <select
-                  aria-label="Scratchpad dock"
-                  value={layout.dock}
-                  onChange={(e) =>
-                    update({ dock: e.target.value as "right" | "bottom" })
-                  }
-                >
-                  <option value="right">Right</option>
-                  <option value="bottom">Below</option>
-                </select>
-              </label>
-              <label>
-                Size{" "}
-                <input
-                  aria-label="Scratchpad size percent"
-                  type="number"
-                  min={20}
-                  max={65}
-                  step={5}
-                  value={Math.round(layout.ratio * 100)}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    if (n >= 20 && n <= 65) update({ ratio: n / 100 });
-                  }}
-                />
-                %
-              </label>
-              <button
-                onClick={() => session.engines.get("scratchpad")?.resetView()}
+    );
+  if (!layout.open) return null;
+  return (
+    <nav className="surface-controls" aria-label="Workspace surfaces">
+      <>
+        <button
+          aria-label="Main board"
+          title="Main board"
+          aria-pressed={state.active === "main"}
+          onClick={() => session.activate("main")}
+        >
+          <Icon name="notebook" />
+        </button>
+        <button
+          aria-label="Scratchpad"
+          title="Scratchpad"
+          aria-pressed={state.active === "scratchpad"}
+          onClick={() => session.activate("scratchpad")}
+        >
+          <Icon name="scratch" />
+        </button>
+        {!hidden ? (
+          <>
+            <label>
+              Dock{" "}
+              <select
+                aria-label="Scratchpad dock"
+                value={layout.dock}
+                onChange={(e) =>
+                  update({ dock: e.target.value as "right" | "bottom" })
+                }
               >
-                Reset scratchpad view
-              </button>
-              <button
-                disabled={session.workspace.readOnly || state.presentation}
-                onClick={() => setClearing(true)}
-              >
-                Clear scratchpad
-              </button>
-            </>
-          ) : null}
-        </>
-      ) : null}
+                <option value="right">Right</option>
+                <option value="bottom">Below</option>
+              </select>
+            </label>
+            <label>
+              Size{" "}
+              <input
+                aria-label="Scratchpad size percent"
+                type="number"
+                min={20}
+                max={65}
+                step={5}
+                value={Math.round(layout.ratio * 100)}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (n >= 20 && n <= 65) update({ ratio: n / 100 });
+                }}
+              />
+              %
+            </label>
+            <button
+              aria-label="Reset scratchpad view"
+              title="Reset scratchpad view"
+              onClick={() => session.engines.get("scratchpad")?.resetView()}
+            >
+              <Icon name="restart" />
+            </button>
+            <button
+              aria-label="Clear scratchpad"
+              title="Clear scratchpad"
+              disabled={session.workspace.readOnly || state.presentation}
+              onClick={() => setClearing(true)}
+            >
+              <Icon name="trash" />
+            </button>
+          </>
+        ) : null}
+      </>
       <dialog
         ref={dialog}
         aria-labelledby="clear-scratchpad-title"
